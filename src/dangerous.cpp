@@ -8,7 +8,7 @@ using namespace QPSD;
 Player *qp;
 Vector<Enemy> *enemies;
 List<Bullet> *bullets;
-List<TempHurtbox> *temphurtboxes;
+List<TempHitbox> *temphitboxes;
 List<Solid> *solids;
 List<Star> *stars;
 List<Shot> *shots;
@@ -60,7 +60,7 @@ struct SaveState {
     Player qp;
     std::vector<Enemy> enemies;
     std::vector<Bullet> bullets;
-    std::vector<TempHurtbox> temphurtboxes;
+    std::vector<TempHitbox> temphitboxes;
     std::vector<Solid> solids;
     std::vector<Star> stars;
     std::vector<Shot> shots;
@@ -149,7 +149,7 @@ void SaveState::save_state()
     qp = *::qp;
     copy(enemies, *::enemies);
     copy(bullets, *::bullets);
-    copy(temphurtboxes, *::temphurtboxes);
+    copy(temphitboxes, *::temphitboxes);
     copy(solids, *::solids);
     copy(stars, *::stars);
     copy(shots, *::shots);
@@ -185,7 +185,7 @@ void SaveState::load_state()
     *::qp = qp;
     copy(*::enemies, enemies);
     copy(*::bullets, bullets);
-    copy(*::temphurtboxes, temphurtboxes);
+    copy(*::temphitboxes, temphitboxes);
     copy(*::solids, solids);
     copy(*::stars, stars);
     copy(*::shots, shots);
@@ -213,7 +213,7 @@ void reset_most_state()
     *buttons_disabled = 0;
     enemies->clear();
     bullets->clear();
-    temphurtboxes->clear();
+    temphitboxes->clear();
     solids->clear();
     stars->clear();
     lasers->clear();
@@ -372,7 +372,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
         qp = (Player*)(imageBase + 0x732e90);
         bullets = (List<Bullet>*)(imageBase + 0x735974);
-        temphurtboxes = (List<TempHurtbox>*)(imageBase + 0x73598c);
+        temphitboxes = (List<TempHitbox>*)(imageBase + 0x73598c);
         solids = (List<Solid>*)(imageBase + 0x735940);
         stars = (List<Star>*)(imageBase + 0x73592c);
         shots = (List<Shot>*)(imageBase + 0x73597c);

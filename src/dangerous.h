@@ -76,7 +76,7 @@ namespace QPSD {
         };
         char _raw[0x38];
     };
-    union TempHurtbox {
+    union TempHitbox {
         struct {
         };
         char _raw[0x20];
