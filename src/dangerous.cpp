@@ -37,6 +37,38 @@ char *boss_dead;
 char *boss_unkflag; // used by the final boss
 char *in_bossfight;
 char *buttons_disabled;
+int *bgm_track;
+int *bgm_next_track;
+char *bgm_next_loop;
+int *bgm_volume;
+int *bgm_handle;
+
+void (*apply_bgm_volume)();
+
+void set_bgm(int track, bool instant = false, bool restart = false)
+{
+    if (!restart && track == *bgm_next_track && track == *bgm_track)
+        return;
+    *bgm_next_track = track;
+    if (restart && track == *bgm_track)
+        *bgm_track = 0;
+    if (instant)
+        *bgm_volume = 0;
+    // Getting the value set when the music was started seems involved
+    // but it's set consistently per track
+    switch (track) {
+    case 0: // silence
+    case 5: // credits
+    case 6: // results
+    case 7: // game over
+    case 16: // final boss intro
+        *bgm_next_loop = 0;
+        return;
+    default:
+        *bgm_next_loop = 1;
+        return;
+    }
+}
 
 struct SaveState {
     int stage_num = -1;
@@ -57,6 +89,7 @@ struct SaveState {
     char boss_unkflag;
     char in_bossfight;
     char buttons_disabled;
+    int bgm_track;
     Player qp;
     std::vector<Enemy> enemies;
     std::vector<Bullet> bullets;
@@ -146,6 +179,7 @@ void SaveState::save_state()
     boss_unkflag = *::boss_unkflag;
     in_bossfight = *::in_bossfight;
     buttons_disabled = *::buttons_disabled;
+    bgm_track = *::bgm_next_track;
     qp = *::qp;
     copy(enemies, *::enemies);
     copy(bullets, *::bullets);
@@ -182,6 +216,7 @@ void SaveState::load_state()
     *::boss_unkflag = boss_unkflag;
     *::in_bossfight = in_bossfight;
     *::buttons_disabled = buttons_disabled;
+    set_bgm(bgm_track);
     *::qp = qp;
     copy(*::enemies, enemies);
     copy(*::bullets, bullets);
@@ -234,6 +269,48 @@ void cycle_hyper_charge()
         qp->hyper_charge = 240.f;
 }
 
+// Only (mostly) correct for defined checkpoints
+// Intentionally does not account for jumping into bosses
+// TODO: side bars
+// TODO: backgrounds (hard?)
+void fix_aesthetics()
+{
+    int stage = *stage_num;
+    int phase = *stage_phase;
+    int frame = *stage_phase_frame;
+
+    switch (stage) {
+    case 1:
+        set_bgm(8);
+        return;
+    case 2:
+        set_bgm(10);
+        return;
+    case 3:
+        set_bgm(12);
+        return;
+    case 4:
+        switch (phase) {
+            case 6:
+                if (frame < 600)
+                    break;
+            case 7:
+            case 8:
+            case 9:
+                set_bgm(15);
+                break;
+            default:
+                set_bgm(14);
+        }
+        break;
+    case 5:
+        set_bgm(17);
+        break;
+    default:
+        break;
+    }
+}
+
 int seek_recency;
 
 struct Checkpoint {
@@ -254,6 +331,7 @@ struct Checkpoint {
             qp->chain = 0;
             qp->chain_timer = 0;
         }
+        fix_aesthetics();
         seek_recency = 60;
     }
 };
@@ -359,6 +437,12 @@ namespace Hook {
             savestate[1].load_state();
         keys_idx = !keys_idx;
 
+        // Fade music back in if we revert music during a fade out
+        if (*bgm_handle && *bgm_next_track == *bgm_track && *bgm_volume < 128) {
+            (*bgm_volume)++;
+            apply_bgm_volume();
+        }
+
         Orig::game_tick();
     }
 }
@@ -369,42 +453,52 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     case DLL_PROCESS_ATTACH:
     {
         char *imageBase = (char*)GetModuleHandle(nullptr);
+        decltype(Orig::game_tick) *mode_tick;
 
-        qp = (Player*)(imageBase + 0x732e90);
-        bullets = (List<Bullet>*)(imageBase + 0x735974);
-        temphitboxes = (List<TempHitbox>*)(imageBase + 0x73598c);
-        solids = (List<Solid>*)(imageBase + 0x735940);
-        stars = (List<Star>*)(imageBase + 0x73592c);
-        shots = (List<Shot>*)(imageBase + 0x73597c);
-        lasers = (List<Laser>*)(imageBase + 0x735984);
-        snakes = (List<Snake>*)(imageBase + 0x735948);
-        sprites = (List<Sprite>*)(imageBase + 0x735950);
-        scorenotifs = (List<ScoreNotif>*)(imageBase + 0x735958);
-        balloons = (List<Balloon>*)(imageBase + 0x73596c);
-        captions = (List<Caption>*)(imageBase + 0x733be4);
-        enemies = (Vector<Enemy>*)(imageBase + 0x733bec);
-        stage_num = (int*)(imageBase + 0x73486c);
-        game_frame = (int*)(imageBase + 0x734848);
-        stage_end = (int*)(imageBase + 0x73484c);
-        stage_phase = (int*)(imageBase + 0x734850);
-        stage_phase_frame = (int*)(imageBase + 0x734854);
-        camera_x_scrolling_speed = (float*)(imageBase + 0x734858);
-        controls_enabled = (char*)(imageBase + 0x73485c);
-        collision_enabled = (char*)(imageBase + 0x73485d);
-        damage_enabled = (char*)(imageBase + 0x73485e);
-        pause_enabled = (char*)(imageBase + 0x73485f);
-        shoot_enabled = (char*)(imageBase + 0x734860);
-        chain_timer_active = (char*)(imageBase + 0x734861);
-        chain_timer_multiplier = (int*)(imageBase + 0x734864);
-        boss_break = (char*)(imageBase + 0x734868);
-        boss_dead = (char*)(imageBase + 0x734869);
-        boss_unkflag = (char*)(imageBase + 0x73486a);
-        in_bossfight = (char*)(imageBase + 0x734994);
-        buttons_disabled = (char*)(imageBase + 0x733a88);
+#define AT(addr, var) do { (var) = reinterpret_cast<decltype(var)>(imageBase + addr); } while (0)
+        AT(0x732e90, qp);
+        AT(0x735974, bullets);
+        AT(0x73598c, temphitboxes);
+        AT(0x735940, solids);
+        AT(0x73592c, stars);
+        AT(0x73597c, shots);
+        AT(0x735984, lasers);
+        AT(0x735948, snakes);
+        AT(0x735950, sprites);
+        AT(0x735958, scorenotifs);
+        AT(0x73596c, balloons);
+        AT(0x733be4, captions);
+        AT(0x733bec, enemies);
+        AT(0x73486c, stage_num);
+        AT(0x734848, game_frame);
+        AT(0x73484c, stage_end);
+        AT(0x734850, stage_phase);
+        AT(0x734854, stage_phase_frame);
+        AT(0x734858, camera_x_scrolling_speed);
+        AT(0x73485c, controls_enabled);
+        AT(0x73485d, collision_enabled);
+        AT(0x73485e, damage_enabled);
+        AT(0x73485f, pause_enabled);
+        AT(0x734860, shoot_enabled);
+        AT(0x734861, chain_timer_active);
+        AT(0x734864, chain_timer_multiplier);
+        AT(0x734868, boss_break);
+        AT(0x734869, boss_dead);
+        AT(0x73486a, boss_unkflag);
+        AT(0x734994, in_bossfight);
+        AT(0x733a88, buttons_disabled);
+        AT(0x72f960, bgm_track);
+        AT(0x72f964, bgm_next_track);
+        AT(0x72f968, bgm_next_loop);
+        AT(0x72f96c, bgm_volume);
+        AT(0x72f970, bgm_handle);
 
-        void (__cdecl **mode_tick)() = ((void (__cdecl **)())(imageBase + 0x715b08));
-        Orig::game_tick = mode_tick[4];
-        if ((char*)Orig::game_tick != imageBase + 0x15C60)
+        AT(0x715b08, mode_tick);
+
+        AT(0x15c60, Orig::game_tick);
+        AT(0xa2c20, apply_bgm_volume);
+
+        if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
         mode_tick[4] = Hook::game_tick;
         break;
