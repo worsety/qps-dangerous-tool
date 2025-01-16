@@ -36,7 +36,7 @@ char *boss_break;
 char *boss_dead;
 char *boss_unkflag; // used by the final boss
 char *in_bossfight;
-char *buttons_disabled;
+char *in_conversation;
 int *bgm_track;
 int *bgm_next_track;
 char *bgm_next_loop;
@@ -88,7 +88,7 @@ struct SaveState {
     char boss_dead;
     char boss_unkflag;
     char in_bossfight;
-    char buttons_disabled;
+    char in_conversation;
     int bgm_track;
     Player qp;
     std::vector<Enemy> enemies;
@@ -178,7 +178,7 @@ void SaveState::save_state()
     boss_dead = *::boss_dead;
     boss_unkflag = *::boss_unkflag;
     in_bossfight = *::in_bossfight;
-    buttons_disabled = *::buttons_disabled;
+    in_conversation = *::in_conversation;
     bgm_track = *::bgm_next_track;
     qp = *::qp;
     copy(enemies, *::enemies);
@@ -215,7 +215,7 @@ void SaveState::load_state()
     *::boss_dead = boss_dead;
     *::boss_unkflag = boss_unkflag;
     *::in_bossfight = in_bossfight;
-    *::buttons_disabled = buttons_disabled;
+    *::in_conversation = in_conversation;
     set_bgm(bgm_track);
     *::qp = qp;
     copy(*::enemies, enemies);
@@ -245,7 +245,7 @@ void reset_most_state()
     *boss_dead = 0;
     *boss_unkflag = 0;
     *in_bossfight = 0;
-    *buttons_disabled = 0;
+    *in_conversation = 0;
     enemies->clear();
     bullets->clear();
     temphitboxes->clear();
@@ -423,18 +423,22 @@ namespace Hook {
             enemies->start->hp = 0;
         if (key_struck(VK_F2))
             cycle_hyper_charge();
-        if (key_struck(VK_F3))
-            seek_backward();
-        if (key_struck(VK_F4))
-            seek_forward();
-        if (key_struck(VK_F5))
-            savestate[0].save_state();
-        if (key_struck(VK_F6))
-            savestate[0].load_state();
-        if (key_struck(VK_F7))
-            savestate[1].save_state();
-        if (key_struck(VK_F8))
-            savestate[1].load_state();
+        // Jumping around during conversations seems to cause crashes,
+        // which is unsurprising in retrospect
+        if (!*in_conversation) {
+            if (key_struck(VK_F3))
+                seek_backward();
+            if (key_struck(VK_F4))
+                seek_forward();
+            if (key_struck(VK_F5))
+                savestate[0].save_state();
+            if (key_struck(VK_F6))
+                savestate[0].load_state();
+            if (key_struck(VK_F7))
+                savestate[1].save_state();
+            if (key_struck(VK_F8))
+                savestate[1].load_state();
+        }
         keys_idx = !keys_idx;
 
         // Fade music back in if we revert music during a fade out
@@ -486,7 +490,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x734869, boss_dead);
         AT(0x73486a, boss_unkflag);
         AT(0x734994, in_bossfight);
-        AT(0x733a88, buttons_disabled);
+        AT(0x733a88, in_conversation);
         AT(0x72f960, bgm_track);
         AT(0x72f964, bgm_next_track);
         AT(0x72f968, bgm_next_loop);

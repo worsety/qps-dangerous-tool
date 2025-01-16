@@ -1,3 +1,2 @@
-Reproduce crash on state load
 Save/load/remove on skip characters in side bars
 Save/load/skip to background state
