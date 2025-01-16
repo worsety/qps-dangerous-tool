@@ -36,6 +36,8 @@ char *boss_break;
 char *boss_dead;
 char *boss_unkflag; // used by the final boss
 char *in_bossfight;
+int *boss_damage_idx;
+float *boss_damage;
 char *in_conversation;
 int *bgm_track;
 int *bgm_next_track;
@@ -88,6 +90,8 @@ struct SaveState {
     char boss_dead;
     char boss_unkflag;
     char in_bossfight;
+    int boss_damage_idx;
+    float boss_damage;
     char in_conversation;
     int bgm_track;
     Player qp;
@@ -178,6 +182,8 @@ void SaveState::save_state()
     boss_dead = *::boss_dead;
     boss_unkflag = *::boss_unkflag;
     in_bossfight = *::in_bossfight;
+    boss_damage_idx = *::boss_damage_idx;
+    boss_damage = *::boss_damage;
     in_conversation = *::in_conversation;
     bgm_track = *::bgm_next_track;
     qp = *::qp;
@@ -215,6 +221,8 @@ void SaveState::load_state()
     *::boss_dead = boss_dead;
     *::boss_unkflag = boss_unkflag;
     *::in_bossfight = in_bossfight;
+    *::boss_damage_idx = boss_damage_idx;
+    *::boss_damage = boss_damage;
     *::in_conversation = in_conversation;
     set_bgm(bgm_track);
     *::qp = qp;
@@ -490,6 +498,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x734869, boss_dead);
         AT(0x73486a, boss_unkflag);
         AT(0x734994, in_bossfight);
+        AT(0x734998, boss_damage_idx);
+        AT(0x73499c, boss_damage);
         AT(0x733a88, in_conversation);
         AT(0x72f960, bgm_track);
         AT(0x72f964, bgm_next_track);
