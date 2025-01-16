@@ -1,2 +1,3 @@
 Save/load/remove on skip characters in side bars
+Fix stage 3 background when jumping to an earlier checkpoint from the bats onwards (probably never, this seems hard)
 Save/load/skip to background state

@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <vector>
+#include <array>
 #include "dangerous.h"
 
 using namespace std;
@@ -44,6 +45,11 @@ int *bgm_next_track;
 char *bgm_next_loop;
 int *bgm_volume;
 int *bgm_handle;
+
+BG2 *bg2;
+BG3 *bg3;
+BG4 *bg4;
+BG5 *bg5;
 
 void (*apply_bgm_volume)();
 
@@ -107,6 +113,15 @@ struct SaveState {
     std::vector<ScoreNotif> scorenotifs;
     std::vector<Balloon> balloons;
     std::vector<Caption> captions;
+    struct {
+        char state[0x38];
+        std::vector<std::array<int, 2>> v2;
+        std::vector<std::array<int, 3>> v3_1;
+        std::vector<std::array<int, 3>> v3_2;
+        std::vector<std::array<int, 4>> v4;
+        std::vector<std::array<int, 5>> v5;
+        char wind[0x2882c];
+    } bg;
     void save_state();
     void load_state();
 } savestate[2];
@@ -124,9 +139,14 @@ template<typename T>
 void copy(Vector<T> &dst, const std::vector<T> &src)
 {
     size_t n = src.size();
-    // Shouldn't ever happen 
-    if (dst.start + n > dst.end_of_storage)
-        ExitProcess(0);
+    if (dst.start + n > dst.end_of_storage) {
+        HANDLE heap = GetProcessHeap();
+        HeapFree(heap, 0, dst.start);
+        dst.start = reinterpret_cast<T*>(HeapAlloc(heap, 0, n * sizeof(T)));
+        if (!dst.start)
+            ExitProcess(0);
+        dst.end_of_storage = dst.start + n;
+    }
     if (n)
         memcpy(dst.start, &src[0], n * sizeof(T));
     dst.finish = dst.start + n;
@@ -150,7 +170,7 @@ void copy(List<T> &dst, const std::vector<T> &src)
     size_t n = src.size();
     ListNode<T> *prev = dst.front->prev;
     for (size_t i = 0; i < n; ++i) {
-        ListNode<T> *node = (ListNode<T>*)HeapAlloc(heap, 0, sizeof(ListNode<T>));
+        ListNode<T> *node = reinterpret_cast<ListNode<T>*>(HeapAlloc(heap, 0, sizeof(ListNode<T>)));
         if (!node)
             ExitProcess(0);
         memcpy(&node->value, &src[i], sizeof(T));
@@ -199,6 +219,31 @@ void SaveState::save_state()
     copy(scorenotifs, *::scorenotifs);
     copy(balloons, *::balloons);
     copy(captions, *::captions);
+    switch (stage_num) {
+    case 2:
+        memcpy(bg.state, &::bg2->state, sizeof(::bg2->state));
+        copy(bg.v3_1, ::bg2->geometry.v3_1);
+        copy(bg.v3_2, ::bg2->geometry.v3_2);
+        copy(bg.v2, ::bg2->geometry.v2);
+        break;
+    case 3:
+        memcpy(bg.state, &::bg3->state, sizeof(::bg3->state));
+        copy(bg.v3_1, ::bg3->geometry.v3);
+        copy(bg.v4, ::bg3->geometry.v4);
+        break;
+    case 4:
+        memcpy(bg.state, &::bg4->state, sizeof(::bg4->state));
+        copy(bg.v5, ::bg4->geometry.l5);
+        copy(bg.v2, ::bg4->geometry.l2);
+        break;
+    case 5:
+        memcpy(bg.state, &::bg5->state, sizeof(::bg5->state));
+        memcpy(bg.wind, &::bg5->geometry.wind, sizeof(::bg5->geometry.wind));
+        copy(bg.v5, ::bg5->geometry.l5);
+        break;
+    default:
+        break;
+    }
 }
 
 void SaveState::load_state()
@@ -238,6 +283,31 @@ void SaveState::load_state()
     copy(*::scorenotifs, scorenotifs);
     copy(*::balloons, balloons);
     copy(*::captions, captions);
+    switch (stage_num) {
+    case 2:
+        memcpy(&::bg2->state, bg.state, sizeof(::bg2->state));
+        copy(::bg2->geometry.v3_1, bg.v3_1);
+        copy(::bg2->geometry.v3_2, bg.v3_2);
+        copy(::bg2->geometry.v2, bg.v2);
+        break;
+    case 3:
+        memcpy(&::bg3->state, bg.state, sizeof(::bg3->state));
+        copy(::bg3->geometry.v3, bg.v3_1);
+        copy(::bg3->geometry.v4, bg.v4);
+        break;
+    case 4:
+        memcpy(&::bg4->state, bg.state, sizeof(::bg4->state));
+        copy(::bg4->geometry.l5, bg.v5);
+        copy(::bg4->geometry.l2, bg.v2);
+        break;
+    case 5:
+        memcpy(&::bg5->state, bg.state, sizeof(::bg5->state));
+        memcpy(&::bg5->geometry.wind, bg.wind, sizeof(::bg5->geometry.wind));
+        copy(::bg5->geometry.l5, bg.v5);
+        break;
+    default:
+        break;
+    }
 }
 
 void reset_most_state()
@@ -280,7 +350,9 @@ void cycle_hyper_charge()
 // Only (mostly) correct for defined checkpoints
 // Intentionally does not account for jumping into bosses
 // TODO: side bars
-// TODO: backgrounds (hard?)
+// FIXME: Stage 3 outside is constantly generating geometry
+// so rewinding during or after the bat section
+// can have very odd results
 void fix_aesthetics()
 {
     int stage = *stage_num;
@@ -293,26 +365,127 @@ void fix_aesthetics()
         return;
     case 2:
         set_bgm(10);
+        bg2->state.dw04 = 0;
+        bg2->state.dw08 = 3;
+        bg2->state.f0c = 0.f;
         return;
     case 3:
         set_bgm(12);
+        bg3->state.dw04 = 0;
+        bg3->state.b08 = 0;
+        bg3->state.b09 = 0;
+        bg3->state.f0c = 0.f;
+        bg3->state.f10 = 2.f;
+        bg3->state.f14 = 450.f;
+        bg3->state.f18 = 1.f;
+        bg3->state.f1c = 1.f;
+        bg3->state.f20 = 1.f;
+        switch (phase) {
+        case 1:
+            bg3->state.b09 = 1;
+            break;
+        case 3:
+            bg3->state.f20 = 0.f;
+            break;
+        case 7:
+            bg3->state.b08 = 1;
+            bg3->state.b09 = 1;
+            if (frame <= 100)
+                bg3->state.f18 = 0.975f;
+            else
+                bg3->state.f18 = 0.5f;
+            break;
+        case 11:
+            bg3->state.dw04 = 100;
+            bg3->state.b08 = 1;
+            bg3->state.f10 = 0.74872136f;
+            bg3->state.f18 = 0.5f;
+            bg3->state.f1c = 0.f;
+            bg3->state.f20 = 0.75f;
+            break;
+        default:
+            break;
+        }
         return;
     case 4:
         switch (phase) {
-            case 6:
-                if (frame < 600)
-                    break;
-            case 7:
-            case 8:
-            case 9:
-                set_bgm(15);
+        case 6:
+            if (frame < 600)
                 break;
-            default:
-                set_bgm(14);
+        case 7:
+        case 8:
+        case 9:
+            set_bgm(15);
+            break;
+        default:
+            set_bgm(14);
+        }
+        bg4->state.dw04 = 100;
+        bg4->state.f0c = 450.f;
+        bg4->state.f10 = -450.f;
+        bg4->state.f14 = 0.95f;
+        bg4->state.b18 = 0;
+        bg4->state.f1c = 0;
+        switch (phase) {
+        case 1:
+            bg4->state.f0c = 750.f;
+            bg4->state.f10 = -300.f;
+            bg4->state.f14 = 1.05f;
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 11:
+            bg4->state.dw04 = 200;
+            bg4->state.f0c = 750.f;
+            bg4->state.f10 = -250.f;
+            bg4->state.f14 = 0.951f;
+            bg4->state.f1c = 0.999f;
+            break;
+        default:
+            break;
         }
         break;
     case 5:
         set_bgm(17);
+        bg5->state.dw04 = 0;
+        bg5->state.f08 = 0.f;
+        bg5->state.f10 = -500.f;
+        bg5->state.f18 = 0.75f;
+        bg5->state.f1c = 0.f;
+        bg5->state.f20 = 0.f;
+        bg5->state.f24 = 0.5f;
+        bg5->state.f28 = 0.f;
+        bg5->state.f2c = 0.f;
+        bg5->state.f30 = 1.f;
+        bg5->state.f34 = 0.75f;
+        switch (phase) {
+        case 1:
+            bg5->state.f08 = 0.55f;
+            bg5->state.f10 = -200.f;
+            bg5->state.f18 = 0.5f;
+            bg5->state.f34 = 0.2f;
+            break;
+        case 2:
+            break;
+        case 4:
+            break;
+        case 9:
+            bg5->state.dw04 = 200;
+            if (frame <= 100) {
+                bg5->state.f08 = -1.35f;
+                bg5->state.f30 = 0.9f;
+                bg5->state.f34 = 0.95f;
+            } else {
+                bg5->state.f08 = -1.5708f;
+                bg5->state.f18 = 0.251f;
+                bg5->state.f1c = 0.499f;
+                bg5->state.f30 = 0.f;
+                bg5->state.f34 = 0.f;
+            }
+            break;
+        }
         break;
     default:
         break;
@@ -359,16 +532,14 @@ Checkpoint checkpoints[] = {
     {3, 3, 9999},
     {3, 7, 100, true},
     {3, 7, 9999},
-    // {3, 11, 265, true}, // alternative checkpoint for bats
     {3, 11, 9999},
     {4, 1, 9999},
     {4, 2, 9999},
     {4, 3, 9999},
-    {4, 11, 0, true},
+    {4, 11, 1, true},
     {5, 1, 9999},
     {5, 2, 9999},
     {5, 4, 9999},
-    {5, 7, 100, true},
     {5, 9, 100, true},
     {5, 9, 9999},
     // Just F1 and savestate in the cutscene if you want to skip to the final attack
@@ -506,6 +677,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x72f968, bgm_next_loop);
         AT(0x72f96c, bgm_volume);
         AT(0x72f970, bgm_handle);
+        AT(0x735c00, bg2);
+        AT(0x735c50, bg3);
+        AT(0x735cc0, bg4);
+        AT(0x735d10, bg5);
 
         AT(0x715b08, mode_tick);
 

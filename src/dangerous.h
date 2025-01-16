@@ -135,4 +135,70 @@ namespace QPSD {
         STAGE_END_RETRY = 4,
         STAGE_END_SURRENDER = 5,
     };
+
+    // Only naming members that have to be updated to jump to checkpoints
+    // Stage 1's background is stateless
+    struct BG2 {
+        union {
+            struct {
+                int dw00, dw04, dw08;
+                float f0c;
+            };
+            char _raw[0x10];
+        } state;
+        int handles[7];
+        struct {
+            Vector<std::array<int, 3>> v3_1;
+            Vector<std::array<int, 3>> v3_2;
+            Vector<std::array<int, 2>> v2;
+        } geometry;
+    };
+    struct BG3 {
+        union {
+            struct {
+                int dw00, dw04;
+                char b08, b09;
+                float f0c, f10, f14, f18, f1c, f20;
+            };
+            char _raw[0x24];
+        } state;
+        int handles[13];
+        struct {
+            Vector<std::array<int, 3>> v3;
+            Vector<std::array<int, 4>> v4;
+        } geometry;
+    };
+    struct BG4 {
+        union {
+            struct {
+                int dw00, dw04;
+                float f08, f0c, f10, f14;
+                char b18;
+                float f1c;
+            };
+            char _raw[0x20];
+        } state;
+        int handles[7];
+        struct {
+            List<std::array<int, 5>> l5;
+            List<std::array<int, 2>> l2;
+        } geometry;
+    };
+    struct BG5 {
+        union {
+            struct {
+                int dw00, dw04;
+                float f08, f0c, f10, f14, f18, f1c, f20, f24, f28, f2c, f30, f34;
+            };
+            char _raw[0x38];
+        } state;
+        int handles[9];
+        struct {
+            List<std::array<int, 5>> l5;
+            union {
+                // can't be bothered.  It's a bunch of floats then 3456 vertices
+                char _raw[0x2882c];
+            } wind;
+        } geometry;
+    };
 };
