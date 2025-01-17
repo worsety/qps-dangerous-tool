@@ -144,7 +144,6 @@ void fix_sidebars()
 
 // Only (mostly) correct for defined checkpoints
 // Intentionally does not account for jumping into bosses
-// TODO: side bars
 // FIXME: Stage 3 outside is constantly generating geometry
 // so rewinding during or after the bat section
 // can have very odd results
