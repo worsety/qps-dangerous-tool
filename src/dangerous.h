@@ -201,4 +201,13 @@ namespace QPSD {
             } wind;
         } geometry;
     };
+    struct SideBarChar {
+        char visible;
+        float opacity;
+        int dw08;
+        int state;
+        int dw10;
+        char pad14[0x10];
+        int texHandle[2];
+    };
 };

@@ -51,7 +51,11 @@ BG3 *bg3;
 BG4 *bg4;
 BG5 *bg5;
 
+SideBarChar *sidebar_char;
+
 void (*apply_bgm_volume)();
+int (*LoadGraph)(const wchar_t *FileName, int NotUse3DFlag);
+int (*SubHandle)(int Handle);
 
 void set_bgm(int track, bool instant = false, bool restart = false)
 {
@@ -76,6 +80,212 @@ void set_bgm(int track, bool instant = false, bool restart = false)
         *bgm_next_loop = 1;
         return;
     }
+}
+
+const wchar_t *sidebar_image_left[4] = {
+    L".\\model\\SIDE\\side_qp00.bmp",
+    L".\\model\\SIDE\\side_qp01.bmp",
+    L".\\model\\SIDE\\side_qpw00.bmp",
+    L".\\model\\SIDE\\side_qpw01.bmp",
+};
+const wchar_t *sidebar_image_right[6][4] = {
+    {},
+    {
+        L".\\model\\SIDE\\side_syura00.bmp",
+        L".\\model\\SIDE\\side_syura00.bmp",
+    },
+    {
+        L".\\model\\SIDE\\side_kyosuke00.bmp",
+        L".\\model\\SIDE\\side_kyosuke00.bmp",
+    },
+    {
+        L".\\model\\SIDE\\side_krila00.bmp",
+        L".\\model\\SIDE\\side_krila00.bmp",
+    },
+    {
+        L".\\model\\SIDE\\side_yuki00.bmp",
+        L".\\model\\SIDE\\side_yuki01.bmp",
+    },
+    {
+        L".\\model\\SIDE\\side_sb00.bmp",
+        L".\\model\\SIDE\\side_sb01.bmp",
+        L".\\model\\SIDE\\side_sbw00.bmp",
+        L".\\model\\SIDE\\side_sbw01.bmp",
+    },
+};
+
+void fix_sidebars()
+{
+    if (sidebar_char[0].visible) {
+        if (*stage_phase == 12 || *stage_phase == 13)
+            return;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++)
+                SubHandle(sidebar_char[i].texHandle[j]);
+            sidebar_char[i].visible = 0;
+        }
+    }
+    if (!sidebar_char[0].visible) {
+        if (*stage_phase < 12 || *stage_phase > 13)
+            return;
+        sidebar_char[0].texHandle[0] = LoadGraph(sidebar_image_left[2 * (*stage_phase == 13)], 0);
+        sidebar_char[0].texHandle[1] = LoadGraph(sidebar_image_left[1 + 2 * (*stage_phase == 13)], 0);
+        sidebar_char[1].texHandle[0] = LoadGraph(sidebar_image_right[*stage_num][2 * (*stage_phase == 13)], 0);
+        sidebar_char[1].texHandle[1] = LoadGraph(sidebar_image_right[*stage_num][1 + 2 * (*stage_phase == 13)], 0);
+        for (int i = 0; i < 2; i++) {
+            sidebar_char[i].visible = 1;
+            sidebar_char[i].opacity = 0.f;
+            sidebar_char[i].dw08 = 0;
+            sidebar_char[i].state = 0; // fade in
+            sidebar_char[i].dw10 = 0;
+        }
+    }
+}
+
+// Only (mostly) correct for defined checkpoints
+// Intentionally does not account for jumping into bosses
+// TODO: side bars
+// FIXME: Stage 3 outside is constantly generating geometry
+// so rewinding during or after the bat section
+// can have very odd results
+void fix_aesthetics()
+{
+    int stage = *stage_num;
+    int phase = *stage_phase;
+    int frame = *stage_phase_frame;
+
+    switch (stage) {
+    case 1:
+        set_bgm(8);
+        break;
+    case 2:
+        set_bgm(10);
+        bg2->state.dw04 = 0;
+        bg2->state.dw08 = 3;
+        bg2->state.f0c = 0.f;
+        break;
+    case 3:
+        set_bgm(12);
+        bg3->state.dw04 = 0;
+        bg3->state.b08 = 0;
+        bg3->state.b09 = 0;
+        bg3->state.f0c = 0.f;
+        bg3->state.f10 = 2.f;
+        bg3->state.f14 = 450.f;
+        bg3->state.f18 = 1.f;
+        bg3->state.f1c = 1.f;
+        bg3->state.f20 = 1.f;
+        switch (phase) {
+        case 1:
+            bg3->state.b09 = 1;
+            break;
+        case 3:
+            bg3->state.f20 = 0.f;
+            break;
+        case 7:
+            bg3->state.b08 = 1;
+            bg3->state.b09 = 1;
+            if (frame <= 100)
+                bg3->state.f18 = 0.975f;
+            else
+                bg3->state.f18 = 0.5f;
+            break;
+        case 11:
+            bg3->state.dw04 = 100;
+            bg3->state.b08 = 1;
+            bg3->state.f10 = 0.74872136f;
+            bg3->state.f18 = 0.5f;
+            bg3->state.f1c = 0.f;
+            bg3->state.f20 = 0.75f;
+            break;
+        default:
+            break;
+        }
+        break;
+    case 4:
+        switch (phase) {
+        case 6:
+            if (frame < 600)
+                break;
+        case 7:
+        case 8:
+        case 9:
+            set_bgm(15);
+            break;
+        default:
+            set_bgm(14);
+        }
+        bg4->state.dw04 = 100;
+        bg4->state.f0c = 450.f;
+        bg4->state.f10 = -450.f;
+        bg4->state.f14 = 0.95f;
+        bg4->state.b18 = 0;
+        bg4->state.f1c = 0;
+        switch (phase) {
+        case 1:
+            bg4->state.f0c = 750.f;
+            bg4->state.f10 = -300.f;
+            bg4->state.f14 = 1.05f;
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 11:
+            bg4->state.dw04 = 200;
+            bg4->state.f0c = 750.f;
+            bg4->state.f10 = -250.f;
+            bg4->state.f14 = 0.951f;
+            bg4->state.f1c = 0.999f;
+            break;
+        default:
+            break;
+        }
+        break;
+    case 5:
+        set_bgm(17);
+        bg5->state.dw04 = 0;
+        bg5->state.f08 = 0.f;
+        bg5->state.f10 = -500.f;
+        bg5->state.f18 = 0.75f;
+        bg5->state.f1c = 0.f;
+        bg5->state.f20 = 0.f;
+        bg5->state.f24 = 0.5f;
+        bg5->state.f28 = 0.f;
+        bg5->state.f2c = 0.f;
+        bg5->state.f30 = 1.f;
+        bg5->state.f34 = 0.75f;
+        switch (phase) {
+        case 1:
+            bg5->state.f08 = 0.55f;
+            bg5->state.f10 = -200.f;
+            bg5->state.f18 = 0.5f;
+            bg5->state.f34 = 0.2f;
+            break;
+        case 2:
+            break;
+        case 4:
+            break;
+        case 9:
+            bg5->state.dw04 = 200;
+            if (frame <= 100) {
+                bg5->state.f08 = -1.35f;
+                bg5->state.f30 = 0.9f;
+                bg5->state.f34 = 0.95f;
+            } else {
+                bg5->state.f08 = -1.5708f;
+                bg5->state.f18 = 0.251f;
+                bg5->state.f1c = 0.499f;
+                bg5->state.f30 = 0.f;
+                bg5->state.f34 = 0.f;
+            }
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+    fix_sidebars();
 }
 
 struct SaveState {
@@ -308,6 +518,7 @@ void SaveState::load_state()
     default:
         break;
     }
+    fix_sidebars();
 }
 
 void reset_most_state()
@@ -345,151 +556,6 @@ void cycle_hyper_charge()
         qp->hyper_charge = 360.f;
     else
         qp->hyper_charge = 240.f;
-}
-
-// Only (mostly) correct for defined checkpoints
-// Intentionally does not account for jumping into bosses
-// TODO: side bars
-// FIXME: Stage 3 outside is constantly generating geometry
-// so rewinding during or after the bat section
-// can have very odd results
-void fix_aesthetics()
-{
-    int stage = *stage_num;
-    int phase = *stage_phase;
-    int frame = *stage_phase_frame;
-
-    switch (stage) {
-    case 1:
-        set_bgm(8);
-        return;
-    case 2:
-        set_bgm(10);
-        bg2->state.dw04 = 0;
-        bg2->state.dw08 = 3;
-        bg2->state.f0c = 0.f;
-        return;
-    case 3:
-        set_bgm(12);
-        bg3->state.dw04 = 0;
-        bg3->state.b08 = 0;
-        bg3->state.b09 = 0;
-        bg3->state.f0c = 0.f;
-        bg3->state.f10 = 2.f;
-        bg3->state.f14 = 450.f;
-        bg3->state.f18 = 1.f;
-        bg3->state.f1c = 1.f;
-        bg3->state.f20 = 1.f;
-        switch (phase) {
-        case 1:
-            bg3->state.b09 = 1;
-            break;
-        case 3:
-            bg3->state.f20 = 0.f;
-            break;
-        case 7:
-            bg3->state.b08 = 1;
-            bg3->state.b09 = 1;
-            if (frame <= 100)
-                bg3->state.f18 = 0.975f;
-            else
-                bg3->state.f18 = 0.5f;
-            break;
-        case 11:
-            bg3->state.dw04 = 100;
-            bg3->state.b08 = 1;
-            bg3->state.f10 = 0.74872136f;
-            bg3->state.f18 = 0.5f;
-            bg3->state.f1c = 0.f;
-            bg3->state.f20 = 0.75f;
-            break;
-        default:
-            break;
-        }
-        return;
-    case 4:
-        switch (phase) {
-        case 6:
-            if (frame < 600)
-                break;
-        case 7:
-        case 8:
-        case 9:
-            set_bgm(15);
-            break;
-        default:
-            set_bgm(14);
-        }
-        bg4->state.dw04 = 100;
-        bg4->state.f0c = 450.f;
-        bg4->state.f10 = -450.f;
-        bg4->state.f14 = 0.95f;
-        bg4->state.b18 = 0;
-        bg4->state.f1c = 0;
-        switch (phase) {
-        case 1:
-            bg4->state.f0c = 750.f;
-            bg4->state.f10 = -300.f;
-            bg4->state.f14 = 1.05f;
-            break;
-        case 2:
-            break;
-        case 3:
-            break;
-        case 11:
-            bg4->state.dw04 = 200;
-            bg4->state.f0c = 750.f;
-            bg4->state.f10 = -250.f;
-            bg4->state.f14 = 0.951f;
-            bg4->state.f1c = 0.999f;
-            break;
-        default:
-            break;
-        }
-        break;
-    case 5:
-        set_bgm(17);
-        bg5->state.dw04 = 0;
-        bg5->state.f08 = 0.f;
-        bg5->state.f10 = -500.f;
-        bg5->state.f18 = 0.75f;
-        bg5->state.f1c = 0.f;
-        bg5->state.f20 = 0.f;
-        bg5->state.f24 = 0.5f;
-        bg5->state.f28 = 0.f;
-        bg5->state.f2c = 0.f;
-        bg5->state.f30 = 1.f;
-        bg5->state.f34 = 0.75f;
-        switch (phase) {
-        case 1:
-            bg5->state.f08 = 0.55f;
-            bg5->state.f10 = -200.f;
-            bg5->state.f18 = 0.5f;
-            bg5->state.f34 = 0.2f;
-            break;
-        case 2:
-            break;
-        case 4:
-            break;
-        case 9:
-            bg5->state.dw04 = 200;
-            if (frame <= 100) {
-                bg5->state.f08 = -1.35f;
-                bg5->state.f30 = 0.9f;
-                bg5->state.f34 = 0.95f;
-            } else {
-                bg5->state.f08 = -1.5708f;
-                bg5->state.f18 = 0.251f;
-                bg5->state.f1c = 0.499f;
-                bg5->state.f30 = 0.f;
-                bg5->state.f34 = 0.f;
-            }
-            break;
-        }
-        break;
-    default:
-        break;
-    }
 }
 
 int seek_recency;
@@ -681,11 +747,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x735c50, bg3);
         AT(0x735cc0, bg4);
         AT(0x735d10, bg5);
+        AT(0x73493c, sidebar_char);
 
         AT(0x715b08, mode_tick);
 
         AT(0x15c60, Orig::game_tick);
         AT(0xa2c20, apply_bgm_volume);
+        AT(0xc29c0, LoadGraph);
+        AT(0xf5840, SubHandle);
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
