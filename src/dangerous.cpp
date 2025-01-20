@@ -117,7 +117,7 @@ const wchar_t *sidebar_image_right[6][4] = {
 void fix_sidebars()
 {
     if (sidebar_char[0].visible) {
-        if (*stage_phase == 12 || *stage_phase == 13)
+        if (*stage_phase == 12 || *stage_num == 5 && *stage_phase == 13)
             return;
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++)
@@ -126,7 +126,7 @@ void fix_sidebars()
         }
     }
     if (!sidebar_char[0].visible) {
-        if (*stage_phase < 12 || *stage_phase > 13)
+        if (*stage_phase != 12 && !(*stage_num == 5 && *stage_phase == 13))
             return;
         sidebar_char[0].texHandle[0] = LoadGraph(sidebar_image_left[2 * (*stage_phase == 13)], 0);
         sidebar_char[0].texHandle[1] = LoadGraph(sidebar_image_left[1 + 2 * (*stage_phase == 13)], 0);
