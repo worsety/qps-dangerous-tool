@@ -547,6 +547,7 @@ void SaveState::load_state()
 void reset_most_state()
 {
     *camera_x_scrolling_speed = 0.f;
+    *stage_end = 0;
     *controls_enabled = 1;
     *collision_enabled = 1;
     *damage_enabled = 1;
@@ -557,7 +558,7 @@ void reset_most_state()
     *boss_dead = 0;
     *boss_unkflag = 0;
     *in_bossfight = 0;
-    *::in_results_screen = 0;
+    *in_results_screen = 0;
     enemies->clear();
     bullets->clear();
     temphitboxes->clear();
