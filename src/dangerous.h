@@ -53,7 +53,9 @@ namespace QPSD {
         struct {
             char _pad000[8];
             int lives; // 0x008
-            char _pad00c[-0x00c+0x238];
+            char _pad00c[-0x00c+0x204];
+            int state;
+            char _pad208[-0x208+0x238];
             int chain; // 0x238
             int max_chain; // 0x23c
             int chain_timer; // 0x240

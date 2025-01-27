@@ -570,6 +570,7 @@ void reset_most_state()
     captions->clear();
     cutscenes_delete();
     conversation_reset();
+    qp->state = 3; // revive if game over
 }
 
 void cycle_hyper_charge()
