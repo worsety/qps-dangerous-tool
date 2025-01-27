@@ -42,6 +42,7 @@ float *boss_damage;
 char *in_conversation;
 int *last_enemy_id;
 int *last_enemy_group_id; // only by a couple of enemies in the game
+char *in_results_screen;
 int *bgm_track;
 int *bgm_next_track;
 char *bgm_next_loop;
@@ -540,6 +541,7 @@ void SaveState::load_state()
     fix_sidebars();
     cutscenes_delete();
     conversation_reset();
+    *::in_results_screen = 0;
 }
 
 void reset_most_state()
@@ -555,6 +557,7 @@ void reset_most_state()
     *boss_dead = 0;
     *boss_unkflag = 0;
     *in_bossfight = 0;
+    *::in_results_screen = 0;
     enemies->clear();
     bullets->clear();
     temphitboxes->clear();
@@ -764,6 +767,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x733a88, in_conversation);
         AT(0x7349b8, last_enemy_id);
         AT(0x7349bc, last_enemy_group_id);
+        AT(0x7335f0, in_results_screen);
         AT(0x72f960, bgm_track);
         AT(0x72f964, bgm_next_track);
         AT(0x72f968, bgm_next_loop);
