@@ -1,2 +1,7 @@
-Fix stage 3 background when jumping to an earlier checkpoint from the bats onwards (probably never, this seems hard)
-Find new bugs
+GUI
+  Injection status
+  Practice functions enable/disable
+  Stage 5 background fix enable/disable
+Xmas Shooting - Scramble!! support
+Fix QPSD stage 3 background when jumping to an earlier checkpoint from the bats onwards (probably never, this seems hard)
+
