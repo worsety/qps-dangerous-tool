@@ -706,7 +706,9 @@ namespace Hook {
             else if (*in_conversation)
                 conversation_reset();
             else
-                enemies->start->hp = 0;
+                for (Enemy *enemy = enemies->start; enemy != enemies->finish; enemy++)
+                    if (11 == enemy->id)
+                        enemy->hp = 0;
         }
         if (key_struck(VK_F2))
             cycle_hyper_charge();
