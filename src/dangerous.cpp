@@ -40,6 +40,8 @@ char *in_bossfight;
 int *boss_damage_idx;
 float *boss_damage;
 char *in_conversation;
+int *last_enemy_id;
+int *last_enemy_group_id; // only by a couple of enemies in the game
 int *bgm_track;
 int *bgm_next_track;
 char *bgm_next_loop;
@@ -323,6 +325,8 @@ struct SaveState {
     int boss_damage_idx;
     float boss_damage;
     int bgm_track;
+    int last_enemy_id;
+    int last_enemy_group_id;
     Player qp;
     std::vector<Enemy> enemies;
     std::vector<Bullet> bullets;
@@ -427,6 +431,8 @@ void SaveState::save_state()
     in_bossfight = *::in_bossfight;
     boss_damage_idx = *::boss_damage_idx;
     boss_damage = *::boss_damage;
+    last_enemy_id = *::last_enemy_id;
+    last_enemy_group_id = *::last_enemy_group_id;
     bgm_track = *::bgm_next_track;
     qp = *::qp;
     copy(enemies, *::enemies);
@@ -490,6 +496,8 @@ void SaveState::load_state()
     *::in_bossfight = in_bossfight;
     *::boss_damage_idx = boss_damage_idx;
     *::boss_damage = boss_damage;
+    *::last_enemy_id = last_enemy_id;
+    *::last_enemy_group_id = last_enemy_group_id;
     set_bgm(bgm_track);
     *::qp = qp;
     copy(*::enemies, enemies);
@@ -754,6 +762,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x734998, boss_damage_idx);
         AT(0x73499c, boss_damage);
         AT(0x733a88, in_conversation);
+        AT(0x7349b8, last_enemy_id);
+        AT(0x7349bc, last_enemy_group_id);
         AT(0x72f960, bgm_track);
         AT(0x72f964, bgm_next_track);
         AT(0x72f968, bgm_next_loop);
