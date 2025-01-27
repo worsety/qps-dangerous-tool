@@ -5,7 +5,7 @@
 using namespace std;
 
 const wchar_t dangerous_help_msg[] =
-    L"F1 - instantly kill boss phase\n"
+    L"F1 - instantly kill boss phase / skip cutscene\n"
     L"F2 - cycle through hyper charge states\n"
     L"F3 - rewind to fixed points in stage\n"
     L"F4 - advance to fixed points in stage\n"

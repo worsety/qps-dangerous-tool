@@ -322,7 +322,6 @@ struct SaveState {
     char in_bossfight;
     int boss_damage_idx;
     float boss_damage;
-    char in_conversation;
     int bgm_track;
     Player qp;
     std::vector<Enemy> enemies;
@@ -428,7 +427,6 @@ void SaveState::save_state()
     in_bossfight = *::in_bossfight;
     boss_damage_idx = *::boss_damage_idx;
     boss_damage = *::boss_damage;
-    in_conversation = *::in_conversation;
     bgm_track = *::bgm_next_track;
     qp = *::qp;
     copy(enemies, *::enemies);
@@ -680,26 +678,28 @@ namespace Hook {
         if (seek_recency > 0)
             --seek_recency;
         GetKeyboardState(keys[keys_idx]);
-        if (key_struck(VK_F1))
-            enemies->start->hp = 0;
+        if (key_struck(VK_F1)) {
+            if (*in_cutscene)
+                cutscenes_delete();
+            else if (*in_conversation)
+                conversation_reset();
+            else
+                enemies->start->hp = 0;
+        }
         if (key_struck(VK_F2))
             cycle_hyper_charge();
-        // Jumping around during conversations seems to cause crashes,
-        // which is unsurprising in retrospect
-        if (!*in_conversation) {
-            if (key_struck(VK_F3))
-                seek_backward();
-            if (key_struck(VK_F4))
-                seek_forward();
-            if (key_struck(VK_F5))
-                savestate[0].save_state();
-            if (key_struck(VK_F6))
-                savestate[0].load_state();
-            if (key_struck(VK_F7))
-                savestate[1].save_state();
-            if (key_struck(VK_F8))
-                savestate[1].load_state();
-        }
+        if (key_struck(VK_F3))
+            seek_backward();
+        if (key_struck(VK_F4))
+            seek_forward();
+        if (key_struck(VK_F5))
+            savestate[0].save_state();
+        if (key_struck(VK_F6))
+            savestate[0].load_state();
+        if (key_struck(VK_F7))
+            savestate[1].save_state();
+        if (key_struck(VK_F8))
+            savestate[1].load_state();
         keys_idx = !keys_idx;
 
         // Fade music back in if we revert music during a fade out
