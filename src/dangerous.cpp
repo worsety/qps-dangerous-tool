@@ -53,9 +53,14 @@ BG5 *bg5;
 
 SideBarChar *sidebar_char;
 
+char *in_cutscene;
+char *cutscene_active;
+void (**cutscene_delete)();
+
 void (*apply_bgm_volume)();
 int (*LoadGraph)(const wchar_t *FileName, int NotUse3DFlag);
 int (*SubHandle)(int Handle);
+void (*conversation_reset)();
 
 void set_bgm(int track, bool instant = false, bool restart = false)
 {
@@ -140,6 +145,16 @@ void fix_sidebars()
             sidebar_char[i].dw10 = 0;
         }
     }
+}
+
+void cutscenes_delete()
+{
+    for (int i = 0; i < 8; i++)
+        if (cutscene_active[i]) {
+            cutscene_delete[i]();
+            cutscene_active[i] = 0;
+        }
+    *in_cutscene = 0;
 }
 
 // Only (mostly) correct for defined checkpoints
@@ -477,7 +492,6 @@ void SaveState::load_state()
     *::in_bossfight = in_bossfight;
     *::boss_damage_idx = boss_damage_idx;
     *::boss_damage = boss_damage;
-    *::in_conversation = in_conversation;
     set_bgm(bgm_track);
     *::qp = qp;
     copy(*::enemies, enemies);
@@ -518,6 +532,8 @@ void SaveState::load_state()
         break;
     }
     fix_sidebars();
+    cutscenes_delete();
+    conversation_reset();
 }
 
 void reset_most_state()
@@ -533,7 +549,6 @@ void reset_most_state()
     *boss_dead = 0;
     *boss_unkflag = 0;
     *in_bossfight = 0;
-    *in_conversation = 0;
     enemies->clear();
     bullets->clear();
     temphitboxes->clear();
@@ -543,6 +558,8 @@ void reset_most_state()
     snakes->clear();
     sprites->clear();
     captions->clear();
+    cutscenes_delete();
+    conversation_reset();
 }
 
 void cycle_hyper_charge()
@@ -748,12 +765,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x735d10, bg5);
         AT(0x73493c, sidebar_char);
 
+        AT(0x732a5c, in_cutscene);
+        AT(0x732a5d, cutscene_active);
+        AT(0x7327c8, cutscene_delete);
+
         AT(0x715b08, mode_tick);
 
         AT(0x15c60, Orig::game_tick);
         AT(0xa2c20, apply_bgm_volume);
         AT(0xc29c0, LoadGraph);
         AT(0xf5840, SubHandle);
+        AT(0x0aff0, conversation_reset);
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
