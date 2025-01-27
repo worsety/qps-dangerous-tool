@@ -61,9 +61,18 @@ char *cutscene_active;
 void (**cutscene_delete)();
 
 void (*apply_bgm_volume)();
-int (*LoadGraph)(const wchar_t *FileName, int NotUse3DFlag);
-int (*SubHandle)(int Handle);
 void (*conversation_reset)();
+
+int (*SetDrawArea)(int x1, int y1, int x2, int y2);
+int (*SetDrawAreaFull)();
+int (*LoadGraph)(const wchar_t *FileName, int NotUse3DFlag);
+int (*DrawLine)(int x1, int y1, int x2, int y2, int Color, int Thickness);
+int (*SubHandle)(int Handle);
+
+// For testing and the future
+void draw_overlay()
+{
+}
 
 void set_bgm(int track, bool instant = false, bool restart = false)
 {
@@ -722,6 +731,7 @@ namespace Hook {
         }
 
         Orig::game_tick();
+        draw_overlay();
     }
 }
 
@@ -789,9 +799,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
         AT(0x15c60, Orig::game_tick);
         AT(0xa2c20, apply_bgm_volume);
-        AT(0xc29c0, LoadGraph);
-        AT(0xf5840, SubHandle);
         AT(0x0aff0, conversation_reset);
+
+        AT(0xb5890, SetDrawArea);
+        AT(0xb5b90, SetDrawAreaFull);
+        AT(0xc29c0, LoadGraph);
+        AT(0xc2e70, DrawLine);
+        AT(0xf5840, SubHandle);
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed

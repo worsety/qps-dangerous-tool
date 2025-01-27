@@ -44,8 +44,11 @@ namespace QPSD {
     union Enemy {
         struct {
             int id;
-            char pad04[0x2c];
+            char pad04[-0x04+0x28];
+            float x, y;
             int hp; // 0x30
+            char pad34[-0x34+0x78];
+            int parent;
         };
         char _raw[0xa4];
     };
@@ -202,6 +205,7 @@ namespace QPSD {
                 char _raw[0x2882c];
             } wind;
         } geometry;
+        int handles2[2];
     };
     struct SideBarChar {
         char visible;
