@@ -60,6 +60,14 @@ char *in_cutscene;
 char *cutscene_active;
 void (**cutscene_delete)();
 
+char *pausemenu_isopen;
+
+char *screen_fade_active;
+int *screen_fade_type;
+float *screen_fade_rate;
+float *screen_fade_progress;
+char *screen_fade_finished;
+
 void (*apply_bgm_volume)();
 void (*conversation_reset)();
 
@@ -682,6 +690,19 @@ void seek_forward()
     }
 }
 
+void return_to_main_menu()
+{
+    *stage_end = 5;
+    *screen_fade_active = 1;
+    *screen_fade_type = 1;
+    *screen_fade_rate = 0.05f;
+    *screen_fade_progress = 0.f;
+    *screen_fade_finished = 0;
+    *controls_enabled = 0;
+    *collision_enabled = 0;
+    *pausemenu_isopen = 0;
+}
+
 BYTE keys[2][256];
 int keys_idx;
 bool key_struck(int vk)
@@ -798,6 +819,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         AT(0x7327c8, cutscene_delete);
 
         AT(0x715b08, mode_tick);
+
+        AT(0x734910, pausemenu_isopen);
+
+        AT(0x713f38, screen_fade_active);
+        AT(0x713f3c, screen_fade_type);
+        AT(0x713f40, screen_fade_rate);
+        AT(0x713f44, screen_fade_progress);
+        AT(0x713f48, screen_fade_finished);
 
         AT(0x15c60, Orig::game_tick);
         AT(0xa2c20, apply_bgm_volume);

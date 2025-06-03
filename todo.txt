@@ -1,7 +1,17 @@
 GUI
-  Injection status
-  Practice functions enable/disable
-  Stage 5 background fix enable/disable
+  Set hyper charge %
+  Set chain
+  Set lives
+  Set rbits
+  Set formations
+  Remove practice tool
 Xmas Shooting - Scramble!! support
-Fix QPSD stage 3 background when jumping to an earlier checkpoint from the bats onwards (probably never, this seems hard)
+Disable trophies feature
+  Record the trophies state on first tick (in the in memory system save)
+  Hook both functions which write the system save, restore trophies before continuing
+  Hook the steam achievement function to disable
+Disable leaderboard score upload and local rankings, hook one function each
+Hold F2 to quickly set charge to arbitrary values?
 
+Very unlikely:
+Fix QPSD stage 3 background when jumping to an earlier checkpoint from the bats onwards (probably never, this seems hard)
