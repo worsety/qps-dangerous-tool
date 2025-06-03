@@ -7,76 +7,76 @@
 using namespace std;
 using namespace QPSD;
 
-Player *qp;
-Vector<Enemy> *enemies;
-List<Bullet> *bullets;
-List<TempHitbox> *temphitboxes;
-List<Solid> *solids;
-List<Star> *stars;
-List<Shot> *shots;
-List<Laser> *lasers;
-List<Snake> *snakes;
-List<Sprite> *sprites;
-List<ScoreNotif> *scorenotifs;
-List<Balloon> *balloons;
-List<Caption> *captions;
+explicit_ptr<Player> qp;
+explicit_ptr<Vector<Enemy>> enemies;
+explicit_ptr<List<Bullet>> bullets;
+explicit_ptr<List<TempHitbox>> temphitboxes;
+explicit_ptr<List<Solid>> solids;
+explicit_ptr<List<Star>> stars;
+explicit_ptr<List<Shot>> shots;
+explicit_ptr<List<Laser>> lasers;
+explicit_ptr<List<Snake>> snakes;
+explicit_ptr<List<Sprite>> sprites;
+explicit_ptr<List<ScoreNotif>> scorenotifs;
+explicit_ptr<List<Balloon>> balloons;
+explicit_ptr<List<Caption>> captions;
 
-int *stage_num;
-int *game_frame;
-int *stage_end;
-int *stage_phase;
-int *stage_phase_frame;
-float *camera_x_scrolling_speed;
-char *controls_enabled;
-char *collision_enabled;
-char *damage_enabled;
-char *pause_enabled;
-char *shoot_enabled;
-char *chain_timer_active;
-int *chain_timer_multiplier;
-char *boss_break;
-char *boss_dead;
-char *boss_unkflag; // used by the final boss
-char *in_bossfight;
-int *boss_damage_idx;
-float *boss_damage;
-char *in_conversation;
-int *last_enemy_id;
-int *last_enemy_group_id; // only by a couple of enemies in the game
-char *in_results_screen;
-int *bgm_track;
-int *bgm_next_track;
-char *bgm_next_loop;
-int *bgm_volume;
-int *bgm_handle;
+pseudo_ref<int> stage_num;
+pseudo_ref<int> game_frame;
+pseudo_ref<int> stage_end;
+pseudo_ref<int> stage_phase;
+pseudo_ref<int> stage_phase_frame;
+pseudo_ref<float> camera_x_scrolling_speed;
+pseudo_ref<char> controls_enabled;
+pseudo_ref<char> collision_enabled;
+pseudo_ref<char> damage_enabled;
+pseudo_ref<char> pause_enabled;
+pseudo_ref<char> shoot_enabled;
+pseudo_ref<char> chain_timer_active;
+pseudo_ref<int> chain_timer_multiplier;
+pseudo_ref<char> boss_break;
+pseudo_ref<char> boss_dead;
+pseudo_ref<char> boss_unkflag; // used by the final boss
+pseudo_ref<char> in_bossfight;
+pseudo_ref<int> boss_damage_idx;
+pseudo_ref<float> boss_damage;
+pseudo_ref<char> in_conversation;
+pseudo_ref<int> last_enemy_id;
+pseudo_ref<int> last_enemy_group_id; // only by a couple of enemies in the game
+pseudo_ref<char> in_results_screen;
+pseudo_ref<int> bgm_track;
+pseudo_ref<int> bgm_next_track;
+pseudo_ref<char> bgm_next_loop;
+pseudo_ref<int> bgm_volume;
+pseudo_ref<int> bgm_handle;
 
-BG2 *bg2;
-BG3 *bg3;
-BG4 *bg4;
-BG5 *bg5;
+explicit_ptr<BG2> bg2;
+explicit_ptr<BG3> bg3;
+explicit_ptr<BG4> bg4;
+explicit_ptr<BG5> bg5;
 
-SideBarChar *sidebar_char;
+pseudo_ref<SideBarChar[2]> sidebar_char;
 
-char *in_cutscene;
-char *cutscene_active;
-void (**cutscene_delete)();
+pseudo_ref<char> in_cutscene;
+pseudo_ref<char[8]> cutscene_active;
+explicit_ptr<void (*)()> cutscene_delete;
 
-char *pausemenu_isopen;
+pseudo_ref<char> pausemenu_isopen;
 
-char *screen_fade_active;
-int *screen_fade_type;
-float *screen_fade_rate;
-float *screen_fade_progress;
-char *screen_fade_finished;
+pseudo_ref<char> screen_fade_active;
+pseudo_ref<int> screen_fade_type;
+pseudo_ref<float> screen_fade_rate;
+pseudo_ref<float> screen_fade_progress;
+pseudo_ref<char> screen_fade_finished;
 
-void (*apply_bgm_volume)();
-void (*conversation_reset)();
+explicit_ptr<void ()> apply_bgm_volume;
+explicit_ptr<void ()> conversation_reset;
 
-int (*SetDrawArea)(int x1, int y1, int x2, int y2);
-int (*SetDrawAreaFull)();
-int (*LoadGraph)(const wchar_t *FileName, int NotUse3DFlag);
-int (*DrawLine)(int x1, int y1, int x2, int y2, int Color, int Thickness);
-int (*SubHandle)(int Handle);
+explicit_ptr<int (int x1, int y1, int x2, int y2)> SetDrawArea;
+explicit_ptr<int ()> SetDrawAreaFull;
+explicit_ptr<int (const wchar_t *FileName, int NotUse3DFlag)> LoadGraph;
+explicit_ptr<int (int x1, int y1, int x2, int y2, int Color, int Thickness)> DrawLine;
+explicit_ptr<int (int Handle)> SubHandle;
 
 // For testing and the future
 void draw_overlay()
@@ -85,13 +85,13 @@ void draw_overlay()
 
 void set_bgm(int track, bool instant = false, bool restart = false)
 {
-    if (!restart && track == *bgm_next_track && track == *bgm_track)
+    if (!restart && track == bgm_next_track && track == bgm_track)
         return;
-    *bgm_next_track = track;
-    if (restart && track == *bgm_track)
-        *bgm_track = 0;
+    bgm_next_track = track;
+    if (restart && track == bgm_track)
+        bgm_track = 0;
     if (instant)
-        *bgm_volume = 0;
+        bgm_volume = 0;
     // Getting the value set when the music was started seems involved
     // but it's set consistently per track
     switch (track) {
@@ -100,10 +100,10 @@ void set_bgm(int track, bool instant = false, bool restart = false)
     case 6: // results
     case 7: // game over
     case 16: // final boss intro
-        *bgm_next_loop = 0;
+        bgm_next_loop = 0;
         return;
     default:
-        *bgm_next_loop = 1;
+        bgm_next_loop = 1;
         return;
     }
 }
@@ -143,7 +143,7 @@ const wchar_t *sidebar_image_right[6][4] = {
 void fix_sidebars()
 {
     if (sidebar_char[0].visible) {
-        if (*stage_phase == 12 || *stage_num == 5 && *stage_phase == 13)
+        if (stage_phase == 12 || stage_num == 5 && stage_phase == 13)
             return;
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++)
@@ -152,12 +152,12 @@ void fix_sidebars()
         }
     }
     if (!sidebar_char[0].visible) {
-        if (*stage_phase != 12 && !(*stage_num == 5 && *stage_phase == 13))
+        if (stage_phase != 12 && !(stage_num == 5 && stage_phase == 13))
             return;
-        sidebar_char[0].texHandle[0] = LoadGraph(sidebar_image_left[2 * (*stage_phase == 13)], 0);
-        sidebar_char[0].texHandle[1] = LoadGraph(sidebar_image_left[1 + 2 * (*stage_phase == 13)], 0);
-        sidebar_char[1].texHandle[0] = LoadGraph(sidebar_image_right[*stage_num][2 * (*stage_phase == 13)], 0);
-        sidebar_char[1].texHandle[1] = LoadGraph(sidebar_image_right[*stage_num][1 + 2 * (*stage_phase == 13)], 0);
+        sidebar_char[0].texHandle[0] = LoadGraph(sidebar_image_left[2 * (stage_phase == 13)], 0);
+        sidebar_char[0].texHandle[1] = LoadGraph(sidebar_image_left[1 + 2 * (stage_phase == 13)], 0);
+        sidebar_char[1].texHandle[0] = LoadGraph(sidebar_image_right[stage_num][2 * (stage_phase == 13)], 0);
+        sidebar_char[1].texHandle[1] = LoadGraph(sidebar_image_right[stage_num][1 + 2 * (stage_phase == 13)], 0);
         for (int i = 0; i < 2; i++) {
             sidebar_char[i].visible = 1;
             sidebar_char[i].opacity = 0.f;
@@ -175,7 +175,7 @@ void cutscenes_delete()
             cutscene_delete[i]();
             cutscene_active[i] = 0;
         }
-    *in_cutscene = 0;
+    in_cutscene = 0;
 }
 
 // Only (mostly) correct for defined checkpoints
@@ -185,9 +185,9 @@ void cutscenes_delete()
 // can have very odd results
 void fix_aesthetics()
 {
-    int stage = *stage_num;
-    int phase = *stage_phase;
-    int frame = *stage_phase_frame;
+    int stage = stage_num;
+    int phase = stage_phase;
+    int frame = stage_phase_frame;
 
     switch (stage) {
     case 1:
@@ -431,28 +431,28 @@ void copy(List<T> &dst, const std::vector<T> &src)
 
 void SaveState::save_state()
 {
-    stage_num = *::stage_num;
-    game_frame = *::game_frame;
-    stage_end = *::stage_end;
-    stage_phase = *::stage_phase;
-    stage_phase_frame = *::stage_phase_frame;
-    camera_x_scrolling_speed = *::camera_x_scrolling_speed;
-    controls_enabled = *::controls_enabled;
-    collision_enabled = *::collision_enabled;
-    damage_enabled = *::damage_enabled;
-    pause_enabled = *::pause_enabled;
-    shoot_enabled = *::shoot_enabled;
-    chain_timer_active = *::chain_timer_active;
-    chain_timer_multiplier = *::chain_timer_multiplier;
-    boss_break = *::boss_break;
-    boss_dead = *::boss_dead;
-    boss_unkflag = *::boss_unkflag;
-    in_bossfight = *::in_bossfight;
-    boss_damage_idx = *::boss_damage_idx;
-    boss_damage = *::boss_damage;
-    last_enemy_id = *::last_enemy_id;
-    last_enemy_group_id = *::last_enemy_group_id;
-    bgm_track = *::bgm_next_track;
+    stage_num = ::stage_num;
+    game_frame = ::game_frame;
+    stage_end = ::stage_end;
+    stage_phase = ::stage_phase;
+    stage_phase_frame = ::stage_phase_frame;
+    camera_x_scrolling_speed = ::camera_x_scrolling_speed;
+    controls_enabled = ::controls_enabled;
+    collision_enabled = ::collision_enabled;
+    damage_enabled = ::damage_enabled;
+    pause_enabled = ::pause_enabled;
+    shoot_enabled = ::shoot_enabled;
+    chain_timer_active = ::chain_timer_active;
+    chain_timer_multiplier = ::chain_timer_multiplier;
+    boss_break = ::boss_break;
+    boss_dead = ::boss_dead;
+    boss_unkflag = ::boss_unkflag;
+    in_bossfight = ::in_bossfight;
+    boss_damage_idx = ::boss_damage_idx;
+    boss_damage = ::boss_damage;
+    last_enemy_id = ::last_enemy_id;
+    last_enemy_group_id = ::last_enemy_group_id;
+    bgm_track = ::bgm_next_track;
     qp = *::qp;
     copy(enemies, *::enemies);
     copy(bullets, *::bullets);
@@ -495,28 +495,28 @@ void SaveState::save_state()
 
 void SaveState::load_state()
 {
-    if (stage_num != *::stage_num)
+    if (stage_num != ::stage_num)
         return;
-    *::game_frame = game_frame;
-    *::stage_end = stage_end;
-    *::stage_phase = stage_phase;
-    *::stage_phase_frame = stage_phase_frame;
-    *::camera_x_scrolling_speed = camera_x_scrolling_speed;
-    *::controls_enabled = controls_enabled;
-    *::collision_enabled = collision_enabled;
-    *::damage_enabled = damage_enabled;
-    *::pause_enabled = pause_enabled;
-    *::shoot_enabled = shoot_enabled;
-    *::chain_timer_active = chain_timer_active;
-    *::chain_timer_multiplier = chain_timer_multiplier;
-    *::boss_break = boss_break;
-    *::boss_dead = boss_dead;
-    *::boss_unkflag = boss_unkflag;
-    *::in_bossfight = in_bossfight;
-    *::boss_damage_idx = boss_damage_idx;
-    *::boss_damage = boss_damage;
-    *::last_enemy_id = last_enemy_id;
-    *::last_enemy_group_id = last_enemy_group_id;
+    ::game_frame = game_frame;
+    ::stage_end = stage_end;
+    ::stage_phase = stage_phase;
+    ::stage_phase_frame = stage_phase_frame;
+    ::camera_x_scrolling_speed = camera_x_scrolling_speed;
+    ::controls_enabled = controls_enabled;
+    ::collision_enabled = collision_enabled;
+    ::damage_enabled = damage_enabled;
+    ::pause_enabled = pause_enabled;
+    ::shoot_enabled = shoot_enabled;
+    ::chain_timer_active = chain_timer_active;
+    ::chain_timer_multiplier = chain_timer_multiplier;
+    ::boss_break = boss_break;
+    ::boss_dead = boss_dead;
+    ::boss_unkflag = boss_unkflag;
+    ::in_bossfight = in_bossfight;
+    ::boss_damage_idx = boss_damage_idx;
+    ::boss_damage = boss_damage;
+    ::last_enemy_id = last_enemy_id;
+    ::last_enemy_group_id = last_enemy_group_id;
     set_bgm(bgm_track);
     *::qp = qp;
     copy(*::enemies, enemies);
@@ -559,24 +559,24 @@ void SaveState::load_state()
     fix_sidebars();
     cutscenes_delete();
     conversation_reset();
-    *::in_results_screen = 0;
+    ::in_results_screen = 0;
 }
 
 void reset_most_state()
 {
-    *camera_x_scrolling_speed = 0.f;
-    *stage_end = 0;
-    *controls_enabled = 1;
-    *collision_enabled = 1;
-    *damage_enabled = 1;
-    *pause_enabled = 1;
-    *shoot_enabled = 1;
-    *chain_timer_multiplier = 1;
-    *boss_break = 0;
-    *boss_dead = 0;
-    *boss_unkflag = 0;
-    *in_bossfight = 0;
-    *in_results_screen = 0;
+    camera_x_scrolling_speed = 0.f;
+    stage_end = 0;
+    controls_enabled = 1;
+    collision_enabled = 1;
+    damage_enabled = 1;
+    pause_enabled = 1;
+    shoot_enabled = 1;
+    chain_timer_multiplier = 1;
+    boss_break = 0;
+    boss_dead = 0;
+    boss_unkflag = 0;
+    in_bossfight = 0;
+    in_results_screen = 0;
     enemies->clear();
     bullets->clear();
     temphitboxes->clear();
@@ -612,11 +612,11 @@ struct Checkpoint {
     bool stop_timer;
     void go() const
     {
-        if (stage != *stage_num)
+        if (stage != stage_num)
             return;
-        *stage_phase = phase;
-        *stage_phase_frame = frame;
-        *chain_timer_active = !stop_timer;
+        stage_phase = phase;
+        stage_phase_frame = frame;
+        chain_timer_active = !stop_timer;
         reset_most_state();
         if (phase == 1) {
             qp->hyper_charge = 0.f;
@@ -659,11 +659,11 @@ Checkpoint checkpoints[] = {
 // special handling for stage 2 and 3 minibosses
 int effective_phase()
 {
-    if (*stage_num == 2 && *stage_phase == 13)
+    if (stage_num == 2 && stage_phase == 13)
         return 3;
-    if (*stage_num == 3 && *stage_phase == 13)
+    if (stage_num == 3 && stage_phase == 13)
         return 4;
-    return *stage_phase;
+    return stage_phase;
 }
 
 void seek_backward()
@@ -673,8 +673,8 @@ void seek_backward()
     int n = seek_recency > 0 ? 2 : 1;
     for (auto i = sizeof checkpoints / sizeof *checkpoints; i--;) {
         auto &c = checkpoints[i];
-        if (c.stage == *stage_num
-            && (c.phase < phase || c.phase == phase && c.frame < *stage_phase_frame)
+        if (c.stage == stage_num
+            && (c.phase < phase || c.phase == phase && c.frame < stage_phase_frame)
             && 0 == --n)
             return c.go();
     }
@@ -684,24 +684,24 @@ void seek_forward()
 {
     auto phase = effective_phase();
     for (auto &c : checkpoints) {
-        if (c.stage == *stage_num
+        if (c.stage == stage_num
             && c.phase != 1 // You probably aren't trying to skip the title card
-            && (c.phase > phase || c.phase == phase && c.frame > *stage_phase_frame))
+            && (c.phase > phase || c.phase == phase && c.frame > stage_phase_frame))
             return c.go();
     }
 }
 
 void return_to_main_menu()
 {
-    *stage_end = 5;
-    *screen_fade_active = 1;
-    *screen_fade_type = 1;
-    *screen_fade_rate = 0.05f;
-    *screen_fade_progress = 0.f;
-    *screen_fade_finished = 0;
-    *controls_enabled = 0;
-    *collision_enabled = 0;
-    *pausemenu_isopen = 0;
+    stage_end = 5;
+    screen_fade_active = 1;
+    screen_fade_type = 1;
+    screen_fade_rate = 0.05f;
+    screen_fade_progress = 0.f;
+    screen_fade_finished = 0;
+    controls_enabled = 0;
+    collision_enabled = 0;
+    pausemenu_isopen = 0;
 }
 
 BYTE keys[2][256];
@@ -713,7 +713,7 @@ bool key_struck(int vk)
 }
 
 namespace Orig {
-    void (__cdecl *game_tick)();
+    explicit_ptr<void __cdecl ()> game_tick;
 }
 
 namespace Hook {
@@ -723,9 +723,9 @@ namespace Hook {
             --seek_recency;
         GetKeyboardState(keys[keys_idx]);
         if (key_struck(VK_F1)) {
-            if (*in_cutscene)
+            if (in_cutscene)
                 cutscenes_delete();
-            else if (*in_conversation)
+            else if (in_conversation)
                 conversation_reset();
             else
                 for (Enemy *enemy = enemies->start; enemy != enemies->finish; enemy++)
@@ -749,8 +749,8 @@ namespace Hook {
         keys_idx = !keys_idx;
 
         // Fade music back in if we revert music during a fade out
-        if (*bgm_handle && *bgm_next_track == *bgm_track && *bgm_volume < 128) {
-            (*bgm_volume)++;
+        if (bgm_handle && bgm_next_track == bgm_track && bgm_volume < 128) {
+            bgm_volume++;
             apply_bgm_volume();
         }
 
@@ -764,78 +764,78 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     switch (dwReason) {
     case DLL_PROCESS_ATTACH:
     {
-        decltype(Orig::game_tick) *mode_tick;
+        pseudo_ref<decltype(Orig::game_tick)::ptr_type[5]> mode_tick;
 
-        AT_EXE(0xb3'2e90, qp);
-        AT_EXE(0xb3'5974, bullets);
-        AT_EXE(0xb3'598c, temphitboxes);
-        AT_EXE(0xb3'5940, solids);
-        AT_EXE(0xb3'592c, stars);
-        AT_EXE(0xb3'597c, shots);
-        AT_EXE(0xb3'5984, lasers);
-        AT_EXE(0xb3'5948, snakes);
-        AT_EXE(0xb3'5950, sprites);
-        AT_EXE(0xb3'5958, scorenotifs);
-        AT_EXE(0xb3'596c, balloons);
-        AT_EXE(0xb3'3be4, captions);
-        AT_EXE(0xb3'3bec, enemies);
-        AT_EXE(0xb3'486c, stage_num);
-        AT_EXE(0xb3'4848, game_frame);
-        AT_EXE(0xb3'484c, stage_end);
-        AT_EXE(0xb3'4850, stage_phase);
-        AT_EXE(0xb3'4854, stage_phase_frame);
-        AT_EXE(0xb3'4858, camera_x_scrolling_speed);
-        AT_EXE(0xb3'485c, controls_enabled);
-        AT_EXE(0xb3'485d, collision_enabled);
-        AT_EXE(0xb3'485e, damage_enabled);
-        AT_EXE(0xb3'485f, pause_enabled);
-        AT_EXE(0xb3'4860, shoot_enabled);
-        AT_EXE(0xb3'4861, chain_timer_active);
-        AT_EXE(0xb3'4864, chain_timer_multiplier);
-        AT_EXE(0xb3'4868, boss_break);
-        AT_EXE(0xb3'4869, boss_dead);
-        AT_EXE(0xb3'486a, boss_unkflag);
-        AT_EXE(0xb3'4994, in_bossfight);
-        AT_EXE(0xb3'4998, boss_damage_idx);
-        AT_EXE(0xb3'499c, boss_damage);
-        AT_EXE(0xb3'3a88, in_conversation);
-        AT_EXE(0xb3'49b8, last_enemy_id);
-        AT_EXE(0xb3'49bc, last_enemy_group_id);
-        AT_EXE(0xb3'35f0, in_results_screen);
-        AT_EXE(0xb2'f960, bgm_track);
-        AT_EXE(0xb2'f964, bgm_next_track);
-        AT_EXE(0xb2'f968, bgm_next_loop);
-        AT_EXE(0xb2'f96c, bgm_volume);
-        AT_EXE(0xb2'f970, bgm_handle);
-        AT_EXE(0xb3'5c00, bg2);
-        AT_EXE(0xb3'5c50, bg3);
-        AT_EXE(0xb3'5cc0, bg4);
-        AT_EXE(0xb3'5d10, bg5);
-        AT_EXE(0xb3'493c, sidebar_char);
+        PTR_EXE(0xb3'2e90, qp);
+        PTR_EXE(0xb3'5974, bullets);
+        PTR_EXE(0xb3'598c, temphitboxes);
+        PTR_EXE(0xb3'5940, solids);
+        PTR_EXE(0xb3'592c, stars);
+        PTR_EXE(0xb3'597c, shots);
+        PTR_EXE(0xb3'5984, lasers);
+        PTR_EXE(0xb3'5948, snakes);
+        PTR_EXE(0xb3'5950, sprites);
+        PTR_EXE(0xb3'5958, scorenotifs);
+        PTR_EXE(0xb3'596c, balloons);
+        PTR_EXE(0xb3'3be4, captions);
+        PTR_EXE(0xb3'3bec, enemies);
+        REF_EXE(0xb3'486c, stage_num);
+        REF_EXE(0xb3'4848, game_frame);
+        REF_EXE(0xb3'484c, stage_end);
+        REF_EXE(0xb3'4850, stage_phase);
+        REF_EXE(0xb3'4854, stage_phase_frame);
+        REF_EXE(0xb3'4858, camera_x_scrolling_speed);
+        REF_EXE(0xb3'485c, controls_enabled);
+        REF_EXE(0xb3'485d, collision_enabled);
+        REF_EXE(0xb3'485e, damage_enabled);
+        REF_EXE(0xb3'485f, pause_enabled);
+        REF_EXE(0xb3'4860, shoot_enabled);
+        REF_EXE(0xb3'4861, chain_timer_active);
+        REF_EXE(0xb3'4864, chain_timer_multiplier);
+        REF_EXE(0xb3'4868, boss_break);
+        REF_EXE(0xb3'4869, boss_dead);
+        REF_EXE(0xb3'486a, boss_unkflag);
+        REF_EXE(0xb3'4994, in_bossfight);
+        REF_EXE(0xb3'4998, boss_damage_idx);
+        REF_EXE(0xb3'499c, boss_damage);
+        REF_EXE(0xb3'3a88, in_conversation);
+        REF_EXE(0xb3'49b8, last_enemy_id);
+        REF_EXE(0xb3'49bc, last_enemy_group_id);
+        REF_EXE(0xb3'35f0, in_results_screen);
+        REF_EXE(0xb2'f960, bgm_track);
+        REF_EXE(0xb2'f964, bgm_next_track);
+        REF_EXE(0xb2'f968, bgm_next_loop);
+        REF_EXE(0xb2'f96c, bgm_volume);
+        REF_EXE(0xb2'f970, bgm_handle);
+        PTR_EXE(0xb3'5c00, bg2);
+        PTR_EXE(0xb3'5c50, bg3);
+        PTR_EXE(0xb3'5cc0, bg4);
+        PTR_EXE(0xb3'5d10, bg5);
+        REF_EXE(0xb3'493c, sidebar_char);
 
-        AT_EXE(0xb3'2a5c, in_cutscene);
-        AT_EXE(0xb3'2a5d, cutscene_active);
-        AT_EXE(0xb3'27c8, cutscene_delete);
+        REF_EXE(0xb3'2a5c, in_cutscene);
+        REF_EXE(0xb3'2a5d, cutscene_active);
+        REF_EXE(0xb3'27c8, cutscene_delete);
 
-        AT_EXE(0xb1'5b08, mode_tick);
+        REF_EXE(0xb1'5b08, mode_tick);
 
-        AT_EXE(0xb3'4910, pausemenu_isopen);
+        REF_EXE(0xb3'4910, pausemenu_isopen);
 
-        AT_EXE(0xb1'3f38, screen_fade_active);
-        AT_EXE(0xb1'3f3c, screen_fade_type);
-        AT_EXE(0xb1'3f40, screen_fade_rate);
-        AT_EXE(0xb1'3f44, screen_fade_progress);
-        AT_EXE(0xb1'3f48, screen_fade_finished);
+        REF_EXE(0xb1'3f38, screen_fade_active);
+        REF_EXE(0xb1'3f3c, screen_fade_type);
+        REF_EXE(0xb1'3f40, screen_fade_rate);
+        REF_EXE(0xb1'3f44, screen_fade_progress);
+        REF_EXE(0xb1'3f48, screen_fade_finished);
 
-        AT_EXE(0x41'5c60, Orig::game_tick);
-        AT_EXE(0x4a'2c20, apply_bgm_volume);
-        AT_EXE(0x40'aff0, conversation_reset);
+        PTR_EXE(0x41'5c60, Orig::game_tick);
+        PTR_EXE(0x4a'2c20, apply_bgm_volume);
+        PTR_EXE(0x40'aff0, conversation_reset);
 
-        AT_EXE(0x4b'5890, SetDrawArea);
-        AT_EXE(0x4b'5b90, SetDrawAreaFull);
-        AT_EXE(0x4c'29c0, LoadGraph);
-        AT_EXE(0x4c'2e70, DrawLine);
-        AT_EXE(0x4f'5840, SubHandle);
+        PTR_EXE(0x4b'5890, SetDrawArea);
+        PTR_EXE(0x4b'5b90, SetDrawAreaFull);
+        PTR_EXE(0x4c'29c0, LoadGraph);
+        PTR_EXE(0x4c'2e70, DrawLine);
+        PTR_EXE(0x4f'5840, SubHandle);
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
