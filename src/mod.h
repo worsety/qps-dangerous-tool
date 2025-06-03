@@ -14,6 +14,7 @@ public:
     operator T&() const { return *ptr; }
     T* operator&() const { return ptr; }
     T& operator=(const T rhs) { return *ptr = rhs; }
+    pseudo_ref<T>& operator=(const pseudo_ref<T> &&rhs) = delete;
 };
 
 template<typename T>
@@ -25,6 +26,7 @@ public:
     void set(T *ptr) { this->ptr = ptr; }
     operator T*() const { return ptr; }
     T* operator->() const { return ptr; }
+    explicit_ptr<T>& operator=(const explicit_ptr<T> &&rhs) = delete;
 };
 
 #define PTR_MOD(moduleName, addr, ptr) do { (ptr).set(reinterpret_cast<decltype(ptr)::ptr_type>((char*)GetModuleHandle(moduleName) + addr)); } while (0)

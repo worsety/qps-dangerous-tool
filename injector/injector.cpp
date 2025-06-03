@@ -85,9 +85,26 @@ bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Pr
 
 bool check_dangerous(Process &process)
 {
-    wchar_t window_title[32];
-    ReadProcessMemory(process.hProc, process.base + 0x37da50, window_title, sizeof(window_title), NULL);
-    return !memcmp(window_title, L"QP Shooting - Dangerous!! 1.4.1", sizeof window_title);
+    IMAGE_DOS_HEADER dos{};
+    if (!ReadProcessMemory(process.hProc, process.base, &dos, sizeof dos, NULL))
+        return false;
+    if (dos.e_magic != IMAGE_DOS_SIGNATURE)
+        return false;
+    IMAGE_NT_HEADERS32 nt{};
+    if (!ReadProcessMemory(process.hProc, process.base + dos.e_lfanew, &nt, sizeof nt, NULL))
+        return false;
+    if (nt.Signature != IMAGE_NT_SIGNATURE)
+        return false;
+    switch (nt.FileHeader.TimeDateStamp) {
+        // Before 1.0: absolutely not, update your game
+        case 1359384688: // 1.3, last patch for doujin version
+            // TODO: maybe 1.3 support some day
+            return false;
+        case 1428050881: // 1.4.1
+            return true;
+        default:
+            return false;
+    }
 }
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)

@@ -764,78 +764,98 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     switch (dwReason) {
     case DLL_PROCESS_ATTACH:
     {
+        explicit_ptr<IMAGE_DOS_HEADER> dos;
+        explicit_ptr<IMAGE_NT_HEADERS32> nt;
+
         pseudo_ref<decltype(Orig::game_tick)::ptr_type[5]> mode_tick;
 
-        PTR_EXE(0xb3'2e90, qp);
-        PTR_EXE(0xb3'5974, bullets);
-        PTR_EXE(0xb3'598c, temphitboxes);
-        PTR_EXE(0xb3'5940, solids);
-        PTR_EXE(0xb3'592c, stars);
-        PTR_EXE(0xb3'597c, shots);
-        PTR_EXE(0xb3'5984, lasers);
-        PTR_EXE(0xb3'5948, snakes);
-        PTR_EXE(0xb3'5950, sprites);
-        PTR_EXE(0xb3'5958, scorenotifs);
-        PTR_EXE(0xb3'596c, balloons);
-        PTR_EXE(0xb3'3be4, captions);
-        PTR_EXE(0xb3'3bec, enemies);
-        REF_EXE(0xb3'486c, stage_num);
-        REF_EXE(0xb3'4848, game_frame);
-        REF_EXE(0xb3'484c, stage_end);
-        REF_EXE(0xb3'4850, stage_phase);
-        REF_EXE(0xb3'4854, stage_phase_frame);
-        REF_EXE(0xb3'4858, camera_x_scrolling_speed);
-        REF_EXE(0xb3'485c, controls_enabled);
-        REF_EXE(0xb3'485d, collision_enabled);
-        REF_EXE(0xb3'485e, damage_enabled);
-        REF_EXE(0xb3'485f, pause_enabled);
-        REF_EXE(0xb3'4860, shoot_enabled);
-        REF_EXE(0xb3'4861, chain_timer_active);
-        REF_EXE(0xb3'4864, chain_timer_multiplier);
-        REF_EXE(0xb3'4868, boss_break);
-        REF_EXE(0xb3'4869, boss_dead);
-        REF_EXE(0xb3'486a, boss_unkflag);
-        REF_EXE(0xb3'4994, in_bossfight);
-        REF_EXE(0xb3'4998, boss_damage_idx);
-        REF_EXE(0xb3'499c, boss_damage);
-        REF_EXE(0xb3'3a88, in_conversation);
-        REF_EXE(0xb3'49b8, last_enemy_id);
-        REF_EXE(0xb3'49bc, last_enemy_group_id);
-        REF_EXE(0xb3'35f0, in_results_screen);
-        REF_EXE(0xb2'f960, bgm_track);
-        REF_EXE(0xb2'f964, bgm_next_track);
-        REF_EXE(0xb2'f968, bgm_next_loop);
-        REF_EXE(0xb2'f96c, bgm_volume);
-        REF_EXE(0xb2'f970, bgm_handle);
-        PTR_EXE(0xb3'5c00, bg2);
-        PTR_EXE(0xb3'5c50, bg3);
-        PTR_EXE(0xb3'5cc0, bg4);
-        PTR_EXE(0xb3'5d10, bg5);
-        REF_EXE(0xb3'493c, sidebar_char);
+        PTR_MOD(nullptr, 0, dos);
+        if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+            return FALSE;
+        PTR_MOD(nullptr, dos->e_lfanew, nt);
+        if (nt->Signature != IMAGE_NT_SIGNATURE)
+            return FALSE;
 
-        REF_EXE(0xb3'2a5c, in_cutscene);
-        REF_EXE(0xb3'2a5d, cutscene_active);
-        REF_EXE(0xb3'27c8, cutscene_delete);
+        switch(nt->FileHeader.TimeDateStamp) {
+        // Before 1.0: absolutely not, update your game
+        case 1359384688: // 1.3, last patch for doujin version
+            // TODO: maybe 1.3 support some day
+            return FALSE;
+        case 1428050881: // 1.4.1
+            PTR_EXE(0xb3'2e90, qp);
+            PTR_EXE(0xb3'5974, bullets);
+            PTR_EXE(0xb3'598c, temphitboxes);
+            PTR_EXE(0xb3'5940, solids);
+            PTR_EXE(0xb3'592c, stars);
+            PTR_EXE(0xb3'597c, shots);
+            PTR_EXE(0xb3'5984, lasers);
+            PTR_EXE(0xb3'5948, snakes);
+            PTR_EXE(0xb3'5950, sprites);
+            PTR_EXE(0xb3'5958, scorenotifs);
+            PTR_EXE(0xb3'596c, balloons);
+            PTR_EXE(0xb3'3be4, captions);
+            PTR_EXE(0xb3'3bec, enemies);
+            REF_EXE(0xb3'486c, stage_num);
+            REF_EXE(0xb3'4848, game_frame);
+            REF_EXE(0xb3'484c, stage_end);
+            REF_EXE(0xb3'4850, stage_phase);
+            REF_EXE(0xb3'4854, stage_phase_frame);
+            REF_EXE(0xb3'4858, camera_x_scrolling_speed);
+            REF_EXE(0xb3'485c, controls_enabled);
+            REF_EXE(0xb3'485d, collision_enabled);
+            REF_EXE(0xb3'485e, damage_enabled);
+            REF_EXE(0xb3'485f, pause_enabled);
+            REF_EXE(0xb3'4860, shoot_enabled);
+            REF_EXE(0xb3'4861, chain_timer_active);
+            REF_EXE(0xb3'4864, chain_timer_multiplier);
+            REF_EXE(0xb3'4868, boss_break);
+            REF_EXE(0xb3'4869, boss_dead);
+            REF_EXE(0xb3'486a, boss_unkflag);
+            REF_EXE(0xb3'4994, in_bossfight);
+            REF_EXE(0xb3'4998, boss_damage_idx);
+            REF_EXE(0xb3'499c, boss_damage);
+            REF_EXE(0xb3'3a88, in_conversation);
+            REF_EXE(0xb3'49b8, last_enemy_id);
+            REF_EXE(0xb3'49bc, last_enemy_group_id);
+            REF_EXE(0xb3'35f0, in_results_screen);
+            REF_EXE(0xb2'f960, bgm_track);
+            REF_EXE(0xb2'f964, bgm_next_track);
+            REF_EXE(0xb2'f968, bgm_next_loop);
+            REF_EXE(0xb2'f96c, bgm_volume);
+            REF_EXE(0xb2'f970, bgm_handle);
+            PTR_EXE(0xb3'5c00, bg2);
+            PTR_EXE(0xb3'5c50, bg3);
+            PTR_EXE(0xb3'5cc0, bg4);
+            PTR_EXE(0xb3'5d10, bg5);
+            REF_EXE(0xb3'493c, sidebar_char);
 
-        REF_EXE(0xb1'5b08, mode_tick);
+            REF_EXE(0xb3'2a5c, in_cutscene);
+            REF_EXE(0xb3'2a5d, cutscene_active);
+            REF_EXE(0xb3'27c8, cutscene_delete);
 
-        REF_EXE(0xb3'4910, pausemenu_isopen);
+            REF_EXE(0xb1'5b08, mode_tick);
 
-        REF_EXE(0xb1'3f38, screen_fade_active);
-        REF_EXE(0xb1'3f3c, screen_fade_type);
-        REF_EXE(0xb1'3f40, screen_fade_rate);
-        REF_EXE(0xb1'3f44, screen_fade_progress);
-        REF_EXE(0xb1'3f48, screen_fade_finished);
+            REF_EXE(0xb3'4910, pausemenu_isopen);
 
-        PTR_EXE(0x41'5c60, Orig::game_tick);
-        PTR_EXE(0x4a'2c20, apply_bgm_volume);
-        PTR_EXE(0x40'aff0, conversation_reset);
+            REF_EXE(0xb1'3f38, screen_fade_active);
+            REF_EXE(0xb1'3f3c, screen_fade_type);
+            REF_EXE(0xb1'3f40, screen_fade_rate);
+            REF_EXE(0xb1'3f44, screen_fade_progress);
+            REF_EXE(0xb1'3f48, screen_fade_finished);
 
-        PTR_EXE(0x4b'5890, SetDrawArea);
-        PTR_EXE(0x4b'5b90, SetDrawAreaFull);
-        PTR_EXE(0x4c'29c0, LoadGraph);
-        PTR_EXE(0x4c'2e70, DrawLine);
-        PTR_EXE(0x4f'5840, SubHandle);
+            PTR_EXE(0x41'5c60, Orig::game_tick);
+            PTR_EXE(0x4a'2c20, apply_bgm_volume);
+            PTR_EXE(0x40'aff0, conversation_reset);
+
+            PTR_EXE(0x4b'5890, SetDrawArea);
+            PTR_EXE(0x4b'5b90, SetDrawAreaFull);
+            PTR_EXE(0x4c'29c0, LoadGraph);
+            PTR_EXE(0x4c'2e70, DrawLine);
+            PTR_EXE(0x4f'5840, SubHandle);
+            break;
+        default:
+            return FALSE;
+        }
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
