@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dangerous.h" />
+    <ClInclude Include="mod.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dangerous.rc" />

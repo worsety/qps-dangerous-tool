@@ -2,6 +2,7 @@
 #include <vector>
 #include <array>
 #include "dangerous.h"
+#include "mod.h"
 
 using namespace std;
 using namespace QPSD;
@@ -763,80 +764,78 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     switch (dwReason) {
     case DLL_PROCESS_ATTACH:
     {
-        char *imageBase = (char*)GetModuleHandle(nullptr);
         decltype(Orig::game_tick) *mode_tick;
 
-#define AT(addr, var) do { (var) = reinterpret_cast<decltype(var)>(imageBase + addr); } while (0)
-        AT(0x732e90, qp);
-        AT(0x735974, bullets);
-        AT(0x73598c, temphitboxes);
-        AT(0x735940, solids);
-        AT(0x73592c, stars);
-        AT(0x73597c, shots);
-        AT(0x735984, lasers);
-        AT(0x735948, snakes);
-        AT(0x735950, sprites);
-        AT(0x735958, scorenotifs);
-        AT(0x73596c, balloons);
-        AT(0x733be4, captions);
-        AT(0x733bec, enemies);
-        AT(0x73486c, stage_num);
-        AT(0x734848, game_frame);
-        AT(0x73484c, stage_end);
-        AT(0x734850, stage_phase);
-        AT(0x734854, stage_phase_frame);
-        AT(0x734858, camera_x_scrolling_speed);
-        AT(0x73485c, controls_enabled);
-        AT(0x73485d, collision_enabled);
-        AT(0x73485e, damage_enabled);
-        AT(0x73485f, pause_enabled);
-        AT(0x734860, shoot_enabled);
-        AT(0x734861, chain_timer_active);
-        AT(0x734864, chain_timer_multiplier);
-        AT(0x734868, boss_break);
-        AT(0x734869, boss_dead);
-        AT(0x73486a, boss_unkflag);
-        AT(0x734994, in_bossfight);
-        AT(0x734998, boss_damage_idx);
-        AT(0x73499c, boss_damage);
-        AT(0x733a88, in_conversation);
-        AT(0x7349b8, last_enemy_id);
-        AT(0x7349bc, last_enemy_group_id);
-        AT(0x7335f0, in_results_screen);
-        AT(0x72f960, bgm_track);
-        AT(0x72f964, bgm_next_track);
-        AT(0x72f968, bgm_next_loop);
-        AT(0x72f96c, bgm_volume);
-        AT(0x72f970, bgm_handle);
-        AT(0x735c00, bg2);
-        AT(0x735c50, bg3);
-        AT(0x735cc0, bg4);
-        AT(0x735d10, bg5);
-        AT(0x73493c, sidebar_char);
+        AT_EXE(0xb3'2e90, qp);
+        AT_EXE(0xb3'5974, bullets);
+        AT_EXE(0xb3'598c, temphitboxes);
+        AT_EXE(0xb3'5940, solids);
+        AT_EXE(0xb3'592c, stars);
+        AT_EXE(0xb3'597c, shots);
+        AT_EXE(0xb3'5984, lasers);
+        AT_EXE(0xb3'5948, snakes);
+        AT_EXE(0xb3'5950, sprites);
+        AT_EXE(0xb3'5958, scorenotifs);
+        AT_EXE(0xb3'596c, balloons);
+        AT_EXE(0xb3'3be4, captions);
+        AT_EXE(0xb3'3bec, enemies);
+        AT_EXE(0xb3'486c, stage_num);
+        AT_EXE(0xb3'4848, game_frame);
+        AT_EXE(0xb3'484c, stage_end);
+        AT_EXE(0xb3'4850, stage_phase);
+        AT_EXE(0xb3'4854, stage_phase_frame);
+        AT_EXE(0xb3'4858, camera_x_scrolling_speed);
+        AT_EXE(0xb3'485c, controls_enabled);
+        AT_EXE(0xb3'485d, collision_enabled);
+        AT_EXE(0xb3'485e, damage_enabled);
+        AT_EXE(0xb3'485f, pause_enabled);
+        AT_EXE(0xb3'4860, shoot_enabled);
+        AT_EXE(0xb3'4861, chain_timer_active);
+        AT_EXE(0xb3'4864, chain_timer_multiplier);
+        AT_EXE(0xb3'4868, boss_break);
+        AT_EXE(0xb3'4869, boss_dead);
+        AT_EXE(0xb3'486a, boss_unkflag);
+        AT_EXE(0xb3'4994, in_bossfight);
+        AT_EXE(0xb3'4998, boss_damage_idx);
+        AT_EXE(0xb3'499c, boss_damage);
+        AT_EXE(0xb3'3a88, in_conversation);
+        AT_EXE(0xb3'49b8, last_enemy_id);
+        AT_EXE(0xb3'49bc, last_enemy_group_id);
+        AT_EXE(0xb3'35f0, in_results_screen);
+        AT_EXE(0xb2'f960, bgm_track);
+        AT_EXE(0xb2'f964, bgm_next_track);
+        AT_EXE(0xb2'f968, bgm_next_loop);
+        AT_EXE(0xb2'f96c, bgm_volume);
+        AT_EXE(0xb2'f970, bgm_handle);
+        AT_EXE(0xb3'5c00, bg2);
+        AT_EXE(0xb3'5c50, bg3);
+        AT_EXE(0xb3'5cc0, bg4);
+        AT_EXE(0xb3'5d10, bg5);
+        AT_EXE(0xb3'493c, sidebar_char);
 
-        AT(0x732a5c, in_cutscene);
-        AT(0x732a5d, cutscene_active);
-        AT(0x7327c8, cutscene_delete);
+        AT_EXE(0xb3'2a5c, in_cutscene);
+        AT_EXE(0xb3'2a5d, cutscene_active);
+        AT_EXE(0xb3'27c8, cutscene_delete);
 
-        AT(0x715b08, mode_tick);
+        AT_EXE(0xb1'5b08, mode_tick);
 
-        AT(0x734910, pausemenu_isopen);
+        AT_EXE(0xb3'4910, pausemenu_isopen);
 
-        AT(0x713f38, screen_fade_active);
-        AT(0x713f3c, screen_fade_type);
-        AT(0x713f40, screen_fade_rate);
-        AT(0x713f44, screen_fade_progress);
-        AT(0x713f48, screen_fade_finished);
+        AT_EXE(0xb1'3f38, screen_fade_active);
+        AT_EXE(0xb1'3f3c, screen_fade_type);
+        AT_EXE(0xb1'3f40, screen_fade_rate);
+        AT_EXE(0xb1'3f44, screen_fade_progress);
+        AT_EXE(0xb1'3f48, screen_fade_finished);
 
-        AT(0x15c60, Orig::game_tick);
-        AT(0xa2c20, apply_bgm_volume);
-        AT(0x0aff0, conversation_reset);
+        AT_EXE(0x41'5c60, Orig::game_tick);
+        AT_EXE(0x4a'2c20, apply_bgm_volume);
+        AT_EXE(0x40'aff0, conversation_reset);
 
-        AT(0xb5890, SetDrawArea);
-        AT(0xb5b90, SetDrawAreaFull);
-        AT(0xc29c0, LoadGraph);
-        AT(0xc2e70, DrawLine);
-        AT(0xf5840, SubHandle);
+        AT_EXE(0x4b'5890, SetDrawArea);
+        AT_EXE(0x4b'5b90, SetDrawAreaFull);
+        AT_EXE(0x4c'29c0, LoadGraph);
+        AT_EXE(0x4c'2e70, DrawLine);
+        AT_EXE(0x4f'5840, SubHandle);
 
         if (Orig::game_tick != mode_tick[4])
             return FALSE; // Assume already installed
