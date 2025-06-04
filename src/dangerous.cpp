@@ -10,87 +10,87 @@ using namespace QPSD;
 
 HMODULE hPracticeDLL;
 
-explicit_ptr<Player> qp;
-explicit_ptr<Vector<Enemy>> enemies;
-explicit_ptr<List<Bullet>> bullets;
-explicit_ptr<List<TempHitbox>> temphitboxes;
-explicit_ptr<List<Solid>> solids;
-explicit_ptr<List<Star>> stars;
-explicit_ptr<List<Shot>> shots;
-explicit_ptr<List<Laser>> lasers;
-explicit_ptr<List<Snake>> snakes;
-explicit_ptr<List<Sprite>> sprites;
-explicit_ptr<List<ScoreNotif>> scorenotifs;
-explicit_ptr<List<Balloon>> balloons;
-explicit_ptr<List<Caption>> captions;
+static explicit_ptr<Player> qp;
+static explicit_ptr<Vector<Enemy>> enemies;
+static explicit_ptr<List<Bullet>> bullets;
+static explicit_ptr<List<TempHitbox>> temphitboxes;
+static explicit_ptr<List<Solid>> solids;
+static explicit_ptr<List<Star>> stars;
+static explicit_ptr<List<Shot>> shots;
+static explicit_ptr<List<Laser>> lasers;
+static explicit_ptr<List<Snake>> snakes;
+static explicit_ptr<List<Sprite>> sprites;
+static explicit_ptr<List<ScoreNotif>> scorenotifs;
+static explicit_ptr<List<Balloon>> balloons;
+static explicit_ptr<List<Caption>> captions;
 
-pseudo_ref<int> stage_num;
-pseudo_ref<int> game_frame;
-pseudo_ref<int> stage_end;
-pseudo_ref<int> stage_phase;
-pseudo_ref<int> stage_phase_frame;
-pseudo_ref<float> camera_x_scrolling_speed;
-pseudo_ref<char> controls_enabled;
-pseudo_ref<char> collision_enabled;
-pseudo_ref<char> damage_enabled;
-pseudo_ref<char> pause_enabled;
-pseudo_ref<char> shoot_enabled;
-pseudo_ref<char> chain_timer_active;
-pseudo_ref<int> chain_timer_multiplier;
-pseudo_ref<char> boss_break;
-pseudo_ref<char> boss_dead;
-pseudo_ref<char> boss_unkflag; // used by the final boss
-pseudo_ref<char> in_bossfight;
-pseudo_ref<int> boss_damage_idx;
-pseudo_ref<float> boss_damage;
-pseudo_ref<char> in_conversation;
-pseudo_ref<int> last_enemy_id;
-pseudo_ref<int> last_enemy_group_id; // only by a couple of enemies in the game
-pseudo_ref<char> in_results_screen;
-pseudo_ref<int> bgm_track;
-pseudo_ref<int> bgm_next_track;
-pseudo_ref<char> bgm_next_loop;
-pseudo_ref<int> bgm_volume;
-pseudo_ref<int> bgm_handle;
+static pseudo_ref<int> stage_num;
+static pseudo_ref<int> game_frame;
+static pseudo_ref<int> stage_end;
+static pseudo_ref<int> stage_phase;
+static pseudo_ref<int> stage_phase_frame;
+static pseudo_ref<float> camera_x_scrolling_speed;
+static pseudo_ref<char> controls_enabled;
+static pseudo_ref<char> collision_enabled;
+static pseudo_ref<char> damage_enabled;
+static pseudo_ref<char> pause_enabled;
+static pseudo_ref<char> shoot_enabled;
+static pseudo_ref<char> chain_timer_active;
+static pseudo_ref<int> chain_timer_multiplier;
+static pseudo_ref<char> boss_break;
+static pseudo_ref<char> boss_dead;
+static pseudo_ref<char> boss_unkflag; // used by the final boss
+static pseudo_ref<char> in_bossfight;
+static pseudo_ref<int> boss_damage_idx;
+static pseudo_ref<float> boss_damage;
+static pseudo_ref<char> in_conversation;
+static pseudo_ref<int> last_enemy_id;
+static pseudo_ref<int> last_enemy_group_id; // only by a couple of enemies in the game
+static pseudo_ref<char> in_results_screen;
+static pseudo_ref<int> bgm_track;
+static pseudo_ref<int> bgm_next_track;
+static pseudo_ref<char> bgm_next_loop;
+static pseudo_ref<int> bgm_volume;
+static pseudo_ref<int> bgm_handle;
 
-explicit_ptr<BG2> bg2;
-explicit_ptr<BG3> bg3;
-explicit_ptr<BG4> bg4;
-explicit_ptr<BG5> bg5;
+static explicit_ptr<BG2> bg2;
+static explicit_ptr<BG3> bg3;
+static explicit_ptr<BG4> bg4;
+static explicit_ptr<BG5> bg5;
 
-pseudo_ref<SideBarChar[2]> sidebar_char;
+static pseudo_ref<SideBarChar[2]> sidebar_char;
 
-pseudo_ref<char> in_cutscene;
-pseudo_ref<char[8]> cutscene_active;
-explicit_ptr<void (*)()> cutscene_delete;
+static pseudo_ref<char> in_cutscene;
+static pseudo_ref<char[8]> cutscene_active;
+static explicit_ptr<void (*)()> cutscene_delete;
 
-pseudo_ref<char> pausemenu_isopen;
+static pseudo_ref<char> pausemenu_isopen;
 
-pseudo_ref<char> screen_fade_active;
-pseudo_ref<int> screen_fade_type;
-pseudo_ref<float> screen_fade_rate;
-pseudo_ref<float> screen_fade_progress;
-pseudo_ref<char> screen_fade_finished;
+static pseudo_ref<char> screen_fade_active;
+static pseudo_ref<int> screen_fade_type;
+static pseudo_ref<float> screen_fade_rate;
+static pseudo_ref<float> screen_fade_progress;
+static pseudo_ref<char> screen_fade_finished;
 
-pseudo_ref<char[35][4]> trophy_flags;
-char trophy_flags_snapshot[35][4];
-bool trophy_flags_recorded;
+static pseudo_ref<char[35][4]> trophy_flags;
+static char trophy_flags_snapshot[35][4];
+static bool trophy_flags_recorded;
 
-explicit_ptr<void ()> apply_bgm_volume;
-explicit_ptr<void ()> conversation_reset;
+static explicit_ptr<void ()> apply_bgm_volume;
+static explicit_ptr<void ()> conversation_reset;
 
-explicit_ptr<int (int x1, int y1, int x2, int y2)> SetDrawArea;
-explicit_ptr<int ()> SetDrawAreaFull;
-explicit_ptr<int (const wchar_t *FileName, int NotUse3DFlag)> LoadGraph;
-explicit_ptr<int (int x1, int y1, int x2, int y2, int Color, int Thickness)> DrawLine;
-explicit_ptr<int (int Handle)> SubHandle;
+static explicit_ptr<int (int x1, int y1, int x2, int y2)> SetDrawArea;
+static explicit_ptr<int ()> SetDrawAreaFull;
+static explicit_ptr<int (const wchar_t *FileName, int NotUse3DFlag)> LoadGraph;
+static explicit_ptr<int (int x1, int y1, int x2, int y2, int Color, int Thickness)> DrawLine;
+static explicit_ptr<int (int Handle)> SubHandle;
 
 // For testing and the future
-void draw_overlay()
+static void draw_overlay()
 {
 }
 
-void set_bgm(int track, bool instant = false, bool restart = false)
+static void set_bgm(int track, bool instant = false, bool restart = false)
 {
     if (!restart && track == bgm_next_track && track == bgm_track)
         return;
@@ -147,7 +147,7 @@ const wchar_t *sidebar_image_right[6][4] = {
     },
 };
 
-void fix_sidebars()
+static void fix_sidebars()
 {
     if (sidebar_char[0].visible) {
         if (stage_phase == 12 || stage_num == 5 && stage_phase == 13)
@@ -175,7 +175,7 @@ void fix_sidebars()
     }
 }
 
-void cutscenes_delete()
+static void cutscenes_delete()
 {
     for (int i = 0; i < 8; i++)
         if (cutscene_active[i]) {
@@ -190,7 +190,7 @@ void cutscenes_delete()
 // FIXME: Stage 3 outside is constantly generating geometry
 // so rewinding during or after the bat section
 // can have very odd results
-void fix_aesthetics()
+static void fix_aesthetics()
 {
     int stage = stage_num;
     int phase = stage_phase;
@@ -380,7 +380,7 @@ struct SaveState {
 } savestate[2];
 
 template<typename T>
-void copy(std::vector<T> &dst, const Vector<T> &src)
+static void copy(std::vector<T> &dst, const Vector<T> &src)
 {
     size_t n = src.size();
     dst.resize(n);
@@ -389,7 +389,7 @@ void copy(std::vector<T> &dst, const Vector<T> &src)
 }
 
 template<typename T>
-void copy(Vector<T> &dst, const std::vector<T> &src)
+static void copy(Vector<T> &dst, const std::vector<T> &src)
 {
     size_t n = src.size();
     if (dst.start + n > dst.end_of_storage) {
@@ -406,7 +406,7 @@ void copy(Vector<T> &dst, const std::vector<T> &src)
 }
 
 template<typename T>
-void copy(std::vector<T> &dst, const List<T> &src)
+static void copy(std::vector<T> &dst, const List<T> &src)
 {
     size_t n = src.size;
     dst.resize(n);
@@ -416,7 +416,7 @@ void copy(std::vector<T> &dst, const List<T> &src)
 }
 
 template<typename T>
-void copy(List<T> &dst, const std::vector<T> &src)
+static void copy(List<T> &dst, const std::vector<T> &src)
 {
     HANDLE heap = GetProcessHeap();
     dst.clear();
@@ -569,7 +569,7 @@ void SaveState::load_state()
     ::in_results_screen = 0;
 }
 
-void reset_most_state()
+static void reset_most_state()
 {
     camera_x_scrolling_speed = 0.f;
     stage_end = 0;
@@ -598,7 +598,7 @@ void reset_most_state()
     qp->state = 3; // revive if game over
 }
 
-void cycle_hyper_charge()
+static void cycle_hyper_charge()
 {
     if (qp->in_hyper || qp->shottype == 49)
         return;
@@ -610,7 +610,7 @@ void cycle_hyper_charge()
         qp->hyper_charge = 240.f;
 }
 
-int seek_recency;
+static int seek_recency;
 
 struct Checkpoint {
     int stage;
@@ -637,7 +637,7 @@ struct Checkpoint {
 
 // Frequently flags are set at the end of a phase and
 // sometimes even a boss is spawned for use in the next phase
-Checkpoint checkpoints[] = {
+const Checkpoint checkpoints[] = {
     {1, 1, 9999},
     {1, 3, 9999},
     {1, 4, 9999},
@@ -664,7 +664,7 @@ Checkpoint checkpoints[] = {
 };
 
 // special handling for stage 2 and 3 minibosses
-int effective_phase()
+static int effective_phase()
 {
     if (stage_num == 2 && stage_phase == 13)
         return 3;
@@ -673,7 +673,7 @@ int effective_phase()
     return stage_phase;
 }
 
-void seek_backward()
+static void seek_backward()
 {
     auto phase = effective_phase();
     // skip the nearest checkpoint if we just loaded a checkpoint
@@ -687,7 +687,7 @@ void seek_backward()
     }
 }
 
-void seek_forward()
+static void seek_forward()
 {
     auto phase = effective_phase();
     for (auto &c : checkpoints) {
@@ -698,7 +698,7 @@ void seek_forward()
     }
 }
 
-void return_to_main_menu()
+static void return_to_main_menu()
 {
     stage_end = 5;
     screen_fade_active = 1;
@@ -713,7 +713,7 @@ void return_to_main_menu()
 
 BYTE keys[2][256];
 int keys_idx;
-bool key_struck(int vk)
+static bool key_struck(int vk)
 {
     return (keys[keys_idx][vk] & 0x80)
         && !(keys[!keys_idx][vk] & 0x80);
@@ -721,16 +721,16 @@ bool key_struck(int vk)
 
 // thiscall requires a member function but fastcall is compatible
 namespace Orig {
-    explicit_ptr<void __cdecl ()> game_tick;
-    explicit_ptr<char __fastcall (void*, int, int, int)> leaderboard_upload;
-    explicit_ptr<void __fastcall (int, int, void*)> rankings_insert;
-    explicit_ptr<void __cdecl ()> game_sys_save;
-    explicit_ptr<char __cdecl ()> game_sys_save2; // does something else first
-    explicit_ptr<char __fastcall (void*, int, int)> grant_achievement;
+    static explicit_ptr<void __cdecl ()> game_tick;
+    static explicit_ptr<char __fastcall (void*, int, int, int)> leaderboard_upload;
+    static explicit_ptr<void __fastcall (int, int, void*)> rankings_insert;
+    static explicit_ptr<void __cdecl ()> game_sys_save;
+    static explicit_ptr<char __cdecl ()> game_sys_save2; // does something else first
+    static explicit_ptr<char __fastcall (void*, int, int)> grant_achievement;
 }
 
 namespace Hook {
-    void game_tick()
+    static void game_tick()
     {
         if (!trophy_flags_recorded) {
             memcpy(trophy_flags_snapshot, trophy_flags, sizeof trophy_flags_snapshot);
@@ -774,26 +774,26 @@ namespace Hook {
         Orig::game_tick();
         draw_overlay();
     }
-    char __fastcall leaderboard_upload(void *obj, int edx, int leaderboard_idx, int score)
+    static char __fastcall leaderboard_upload(void *obj, int edx, int leaderboard_idx, int score)
     {
         return 0;
     }
-    void __fastcall rankings_insert(int difficulty, int edx, void *score)
+    static void __fastcall rankings_insert(int difficulty, int edx, void *score)
     {
     }
-    void game_sys_save()
+    static void game_sys_save()
     {
         if (trophy_flags_recorded)
             memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
         Orig::game_sys_save();
     }
-    char game_sys_save2()
+    static char game_sys_save2()
     {
         if (trophy_flags_recorded)
             memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
         return Orig::game_sys_save2();
     }
-    char __fastcall grant_achievement(void *obj, int edx, int idx)
+    static char __fastcall grant_achievement(void *obj, int edx, int idx)
     {
         return 0;
     }
