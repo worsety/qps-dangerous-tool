@@ -1,6 +1,8 @@
 #pragma once
 #include <windows.h>
 
+extern HMODULE hPracticeDLL;
+
 namespace QPSD {
     // Uses libstdc++ maybe?
     template<typename T>

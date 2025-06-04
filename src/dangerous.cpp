@@ -8,6 +8,8 @@
 using namespace std;
 using namespace QPSD;
 
+HMODULE hPracticeDLL;
+
 explicit_ptr<Player> qp;
 explicit_ptr<Vector<Enemy>> enemies;
 explicit_ptr<List<Bullet>> bullets;
@@ -797,6 +799,8 @@ namespace Hook {
     }
 }
 
+static bool hooked;
+
 bool hook()
 {
     DetourTransactionBegin();
@@ -806,11 +810,13 @@ bool hook()
     DetourAttach(&(PVOID&)Orig::game_sys_save.ptr, Hook::game_sys_save);
     DetourAttach(&(PVOID&)Orig::game_sys_save2.ptr, Hook::game_sys_save2);
     DetourAttach(&(PVOID&)Orig::grant_achievement.ptr, Hook::grant_achievement);
-    return NO_ERROR == DetourTransactionCommit();
+    return hooked = NO_ERROR == DetourTransactionCommit();
 }
 
 void unhook()
 {
+    if (!hooked)
+        return;
     DetourTransactionBegin();
     DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
     DetourDetach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
@@ -821,6 +827,7 @@ void unhook()
     DetourTransactionCommit();
     if (trophy_flags_recorded)
         memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
+    hooked = false;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
@@ -920,6 +927,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             PTR_EXE(0x41'2ac0, Orig::game_sys_save);
             PTR_EXE(0x41'3340, Orig::game_sys_save2);
             PTR_EXE(0x40'2f00, Orig::grant_achievement);
+
+            hPracticeDLL = hModule;
             break;
         default:
             return FALSE;
@@ -929,9 +938,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             return FALSE;
         break;
     }
+    case DLL_PROCESS_DETACH:
+        unhook();
+        break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
         break;
     }
     return TRUE;
