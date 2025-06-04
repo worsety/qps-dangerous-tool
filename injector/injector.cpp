@@ -4,7 +4,7 @@
 
 using namespace std;
 
-const wchar_t dangerous_help_msg[] =
+const wchar_t help_msg[] =
     L"F1 - instantly kill boss phase / skip cutscene\n"
     L"F2 - cycle through hyper charge states\n"
     L"F3 - rewind to fixed points in stage\n"
@@ -15,83 +15,104 @@ const wchar_t dangerous_help_msg[] =
     L"F8 - load state 2\n";
 
 struct Process {
-	HANDLE hProc;
-	char *base;
+    HANDLE handle{};
+    char *base;
+    bool read(const void *address, void *buffer, SIZE_T size);
+    bool write(void *address, const void *data, SIZE_T size);
 };
+
+bool Process::read(const void *address, void *buffer, SIZE_T size)
+{
+    SIZE_T read_bytes;
+    if (!ReadProcessMemory(handle, address, buffer, size, &read_bytes))
+        return false;
+    return read_bytes == size;
+}
+
+bool Process::write(void *address, const void *data, SIZE_T size)
+{
+    SIZE_T written_bytes;
+    if (!WriteProcessMemory(handle, address, data, size, &written_bytes))
+        return false;
+    return written_bytes == size;
+}
 
 Process findProcess(const wchar_t *needle, DWORD desiredAccess)
 {
-	static DWORD pids[16384];
-	wchar_t queryModuleName[MAX_PATH];
+    static DWORD pids[16384];
+    wchar_t queryModuleName[MAX_PATH];
 
-	HANDLE hProc{};
-	HMODULE hMod{};
-	MODULEINFO modInfo;
-	DWORD cbNeeded{};
+    HANDLE hProc{};
+    HMODULE hMod{};
+    MODULEINFO modInfo;
+    DWORD cbNeeded{};
 
-	if (0 == EnumProcesses(pids, sizeof pids, &cbNeeded))
-		return {};
+    if (0 == EnumProcesses(pids, sizeof pids, &cbNeeded))
+        return {};
 
-	for (int n = cbNeeded / sizeof * pids, i = 0; i < n; i++, hProc && CloseHandle(hProc)) {
-		hProc = OpenProcess(desiredAccess | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pids[i]);
-		if (!hProc)
-			continue;
-		if (!EnumProcessModulesEx(hProc, &hMod, sizeof hMod, &cbNeeded, LIST_MODULES_ALL))
-			continue;
-		if (cbNeeded < sizeof hMod)
-			continue;
-		if (!GetModuleBaseName(hProc, hMod, queryModuleName, sizeof queryModuleName / sizeof *queryModuleName))
-			continue;
-		if (wcscmp(queryModuleName, needle))
-			continue;
-		if (0 == GetModuleInformation(hProc, hMod, &modInfo, sizeof modInfo))
-			continue;
-		return {hProc, reinterpret_cast<char*>(modInfo.lpBaseOfDll)};
-	}
-	return {};
+    for (int n = cbNeeded / sizeof * pids, i = 0; i < n; i++, hProc && CloseHandle(hProc)) {
+        hProc = OpenProcess(desiredAccess | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pids[i]);
+        if (!hProc)
+            continue;
+        if (!EnumProcessModulesEx(hProc, &hMod, sizeof hMod, &cbNeeded, LIST_MODULES_ALL))
+            continue;
+        if (cbNeeded < sizeof hMod)
+            continue;
+        if (!GetModuleBaseName(hProc, hMod, queryModuleName, sizeof queryModuleName / sizeof *queryModuleName))
+            continue;
+        if (wcscmp(queryModuleName, needle))
+            continue;
+        if (0 == GetModuleInformation(hProc, hMod, &modInfo, sizeof modInfo))
+            continue;
+        return {hProc, reinterpret_cast<char*>(modInfo.lpBaseOfDll)};
+    }
+    return {};
 }
 
 bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Process&))
 {
-	Process process;
+    Process process;
     while (1) {
         process = findProcess(target_exe, PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION);
-        if (process.hProc)
+        if (process.handle)
             break;
-        if (IDCANCEL == MessageBox(NULL, L"Could not find/access process", L"Error", MB_RETRYCANCEL | MB_ICONERROR))
+        if (IDCANCEL == MessageBox(nullptr, L"Could not find/access process", L"Error", MB_RETRYCANCEL | MB_ICONERROR))
             return false;
-        CloseHandle(process.hProc);
+        CloseHandle(process.handle);
     }
-	if (!check(process)) {
-        MessageBox(NULL, L"Mismatched version.", L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-	auto size = wcslen(dll_path) * sizeof *dll_path;
-	auto buffer = VirtualAllocEx(process.hProc, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	if (!buffer) {
-        MessageBox(NULL, L"Failed to allocate memory in process.", L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-	if (!WriteProcessMemory(process.hProc, buffer, dll_path, size, nullptr)) {
-        MessageBox(NULL, L"Failed to write to process memory.", L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-	if (!CreateRemoteThread(process.hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibrary), buffer, 0, nullptr)) {
-        MessageBox(NULL, L"Failed to create remote thread.", L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-	return true;
+    if (!check(process)) {
+        MessageBox(nullptr, L"Unsupported game version.", L"Error", MB_OK | MB_ICONERROR);
+        return false;
+    }
+    auto size = wcslen(dll_path) * sizeof *dll_path;
+    auto buffer = VirtualAllocEx(process.handle, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    if (!buffer) {
+        MessageBox(nullptr, L"Failed to allocate memory in process.", L"Error", MB_OK | MB_ICONERROR);
+        return false;
+    }
+    if (!process.write(buffer, dll_path, size)) {
+        MessageBox(nullptr, L"Failed to write to process memory.", L"Error", MB_OK | MB_ICONERROR);
+        return false;
+    }
+    auto loadlib_thread = CreateRemoteThread(process.handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibrary), buffer, 0, nullptr);
+    if (!loadlib_thread) {
+        MessageBox(nullptr, L"Failed to create remote thread.", L"Error", MB_OK | MB_ICONERROR);
+        return false;
+    }
+    WaitForSingleObject(loadlib_thread, INFINITE);
+    VirtualFreeEx(process.handle, buffer, 0, MEM_RELEASE);
+    return true;
 }
 
 bool check_dangerous(Process &process)
 {
     IMAGE_DOS_HEADER dos{};
-    if (!ReadProcessMemory(process.hProc, process.base, &dos, sizeof dos, NULL))
+    if (!process.read(process.base, &dos, sizeof dos))
         return false;
     if (dos.e_magic != IMAGE_DOS_SIGNATURE)
         return false;
     IMAGE_NT_HEADERS32 nt{};
-    if (!ReadProcessMemory(process.hProc, process.base + dos.e_lfanew, &nt, sizeof nt, NULL))
+    if (!process.read(process.base + dos.e_lfanew, &nt, sizeof nt))
         return false;
     if (nt.Signature != IMAGE_NT_SIGNATURE)
         return false;
@@ -109,12 +130,16 @@ bool check_dangerous(Process &process)
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
-	wchar_t dll_dir[MAX_PATH], dll_path[MAX_PATH];
+    wchar_t dll_dir[MAX_PATH], dangerous_dll[MAX_PATH];
 
     SetProcessDPIAware();
-	GetCurrentDirectory(MAX_PATH, dll_dir);
-	swprintf(dll_path, MAX_PATH, L"%ls\\%ls", dll_dir, L"dangerous.dll");
-	if (inject(L"QP Shooting.exe", dll_path, check_dangerous))
-        MessageBox(NULL, dangerous_help_msg, L"Probably works now", MB_OK);
+    GetCurrentDirectory(MAX_PATH, dll_dir);
+    swprintf(dangerous_dll, MAX_PATH, L"%ls\\%ls", dll_dir, L"dangerous.dll");
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(dangerous_dll)) {
+        MessageBox(nullptr, L"dangerous.dll missing", L"Error", MB_OK | MB_ICONERROR);
+        return 0;
+    }
+    if (inject(L"QP Shooting.exe", dangerous_dll, check_dangerous))
+        MessageBox(nullptr, help_msg, L"Success", MB_OK);
     return 0;
 }
