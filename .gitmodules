@@ -1,0 +1,3 @@
+[submodule "Detours"]
+	path = 3rdparty/Detours
+	url = https://github.com/worsety/Detours.git

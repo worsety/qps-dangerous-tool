@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <detours.h>
 #include <vector>
 #include <array>
 #include "dangerous.h"
@@ -759,6 +760,20 @@ namespace Hook {
     }
 }
 
+void hook()
+{
+    DetourTransactionBegin();
+    DetourAttach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
+    DetourTransactionCommit();
+}
+
+void unhook()
+{
+    DetourTransactionBegin();
+    DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
+    DetourTransactionCommit();
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     switch (dwReason) {
@@ -766,8 +781,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     {
         explicit_ptr<IMAGE_DOS_HEADER> dos;
         explicit_ptr<IMAGE_NT_HEADERS32> nt;
-
-        pseudo_ref<decltype(Orig::game_tick)::ptr_type[5]> mode_tick;
 
         PTR_MOD(nullptr, 0, dos);
         if (dos->e_magic != IMAGE_DOS_SIGNATURE)
@@ -833,8 +846,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             REF_EXE(0xb3'2a5d, cutscene_active);
             REF_EXE(0xb3'27c8, cutscene_delete);
 
-            REF_EXE(0xb1'5b08, mode_tick);
-
             REF_EXE(0xb3'4910, pausemenu_isopen);
 
             REF_EXE(0xb1'3f38, screen_fade_active);
@@ -843,7 +854,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             REF_EXE(0xb1'3f44, screen_fade_progress);
             REF_EXE(0xb1'3f48, screen_fade_finished);
 
-            PTR_EXE(0x41'5c60, Orig::game_tick);
             PTR_EXE(0x4a'2c20, apply_bgm_volume);
             PTR_EXE(0x40'aff0, conversation_reset);
 
@@ -852,14 +862,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             PTR_EXE(0x4c'29c0, LoadGraph);
             PTR_EXE(0x4c'2e70, DrawLine);
             PTR_EXE(0x4f'5840, SubHandle);
+
+            PTR_EXE(0x41'5c60, Orig::game_tick);
             break;
         default:
             return FALSE;
         }
 
-        if (Orig::game_tick != mode_tick[4])
-            return FALSE; // Assume already installed
-        mode_tick[4] = Hook::game_tick;
+        hook();
         break;
     }
     case DLL_THREAD_ATTACH:

@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "injector", "injector\inject
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dangerous", "src\dangerous.vcxproj", "{F001D685-DCC6-4955-8282-A713AE718D49}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Detours", "3rdparty\Detours\vc\Detours.vcxproj", "{37489709-8054-4903-9C49-A79846049FC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -21,8 +23,15 @@ Global
 		{F001D685-DCC6-4955-8282-A713AE718D49}.Debug|x86.Build.0 = Debug|Win32
 		{F001D685-DCC6-4955-8282-A713AE718D49}.Release|x86.ActiveCfg = Release|Win32
 		{F001D685-DCC6-4955-8282-A713AE718D49}.Release|x86.Build.0 = Release|Win32
+		{37489709-8054-4903-9C49-A79846049FC9}.Debug|x86.ActiveCfg = DebugMDd|Win32
+		{37489709-8054-4903-9C49-A79846049FC9}.Debug|x86.Build.0 = DebugMDd|Win32
+		{37489709-8054-4903-9C49-A79846049FC9}.Release|x86.ActiveCfg = ReleaseMD|Win32
+		{37489709-8054-4903-9C49-A79846049FC9}.Release|x86.Build.0 = ReleaseMD|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AABF1C80-3A90-4D11-875C-191CD295827F}
 	EndGlobalSection
 EndGlobal

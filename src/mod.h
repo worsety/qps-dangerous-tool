@@ -19,8 +19,8 @@ public:
 
 template<typename T>
 class explicit_ptr {
-    T* ptr = nullptr;
 public:
+    T* ptr = nullptr; // exposed for detours
     typedef T value_type;
     typedef T *ptr_type;
     void set(T *ptr) { this->ptr = ptr; }
