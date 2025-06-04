@@ -70,6 +70,10 @@ pseudo_ref<float> screen_fade_rate;
 pseudo_ref<float> screen_fade_progress;
 pseudo_ref<char> screen_fade_finished;
 
+pseudo_ref<char[35][4]> trophy_flags;
+char trophy_flags_snapshot[35][4];
+bool trophy_flags_recorded;
+
 explicit_ptr<void ()> apply_bgm_volume;
 explicit_ptr<void ()> conversation_reset;
 
@@ -713,13 +717,23 @@ bool key_struck(int vk)
         && !(keys[!keys_idx][vk] & 0x80);
 }
 
+// thiscall requires a member function but fastcall is compatible
 namespace Orig {
     explicit_ptr<void __cdecl ()> game_tick;
+    explicit_ptr<char __fastcall (void*, int, int, int)> leaderboard_upload;
+    explicit_ptr<void __fastcall (int, int, void*)> rankings_insert;
+    explicit_ptr<void __cdecl ()> game_sys_save;
+    explicit_ptr<char __cdecl ()> game_sys_save2; // does something else first
+    explicit_ptr<char __fastcall (void*, int, int)> grant_achievement;
 }
 
 namespace Hook {
     void game_tick()
     {
+        if (!trophy_flags_recorded) {
+            memcpy(trophy_flags_snapshot, trophy_flags, sizeof trophy_flags_snapshot);
+            trophy_flags_recorded = true;
+        }
         if (seek_recency > 0)
             --seek_recency;
         GetKeyboardState(keys[keys_idx]);
@@ -758,20 +772,55 @@ namespace Hook {
         Orig::game_tick();
         draw_overlay();
     }
+    char __fastcall leaderboard_upload(void *obj, int edx, int leaderboard_idx, int score)
+    {
+        return 0;
+    }
+    void __fastcall rankings_insert(int difficulty, int edx, void *score)
+    {
+    }
+    void game_sys_save()
+    {
+        if (trophy_flags_recorded)
+            memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
+        Orig::game_sys_save();
+    }
+    char game_sys_save2()
+    {
+        if (trophy_flags_recorded)
+            memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
+        return Orig::game_sys_save2();
+    }
+    char __fastcall grant_achievement(void *obj, int edx, int idx)
+    {
+        return 0;
+    }
 }
 
-void hook()
+bool hook()
 {
     DetourTransactionBegin();
     DetourAttach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
-    DetourTransactionCommit();
+    DetourAttach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
+    DetourAttach(&(PVOID&)Orig::rankings_insert.ptr, Hook::rankings_insert);
+    DetourAttach(&(PVOID&)Orig::game_sys_save.ptr, Hook::game_sys_save);
+    DetourAttach(&(PVOID&)Orig::game_sys_save2.ptr, Hook::game_sys_save2);
+    DetourAttach(&(PVOID&)Orig::grant_achievement.ptr, Hook::grant_achievement);
+    return NO_ERROR == DetourTransactionCommit();
 }
 
 void unhook()
 {
     DetourTransactionBegin();
     DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
+    DetourDetach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
+    DetourDetach(&(PVOID&)Orig::rankings_insert.ptr, Hook::rankings_insert);
+    DetourDetach(&(PVOID&)Orig::game_sys_save.ptr, Hook::game_sys_save);
+    DetourDetach(&(PVOID&)Orig::game_sys_save2.ptr, Hook::game_sys_save2);
+    DetourDetach(&(PVOID&)Orig::grant_achievement.ptr, Hook::grant_achievement);
     DetourTransactionCommit();
+    if (trophy_flags_recorded)
+        memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
@@ -854,6 +903,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             REF_EXE(0xb1'3f44, screen_fade_progress);
             REF_EXE(0xb1'3f48, screen_fade_finished);
 
+            REF_EXE(0xb3'2c2e, trophy_flags);
+
             PTR_EXE(0x4a'2c20, apply_bgm_volume);
             PTR_EXE(0x40'aff0, conversation_reset);
 
@@ -864,12 +915,18 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             PTR_EXE(0x4f'5840, SubHandle);
 
             PTR_EXE(0x41'5c60, Orig::game_tick);
+            PTR_EXE(0x40'2ab0, Orig::leaderboard_upload);
+            PTR_EXE(0x41'06d0, Orig::rankings_insert);
+            PTR_EXE(0x41'2ac0, Orig::game_sys_save);
+            PTR_EXE(0x41'3340, Orig::game_sys_save2);
+            PTR_EXE(0x40'2f00, Orig::grant_achievement);
             break;
         default:
             return FALSE;
         }
 
-        hook();
+        if (!hook())
+            return FALSE;
         break;
     }
     case DLL_THREAD_ATTACH:
