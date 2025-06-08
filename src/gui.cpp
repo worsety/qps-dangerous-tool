@@ -191,6 +191,17 @@ static INT_PTR CALLBACK gui_dlgproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
                 SetTimer(hwndGui, TIMER_FREELIB_SAFETY, 200, nullptr);
                 handled = true;
                 break;
+            case IDC_FIX_BACKGROUNDS:
+            {
+                HWND fixBG = (HWND)lParam;
+                SetWindowText(fixBG, fix_backgrounds() ? L"Fixed" : L"Failed");
+                EnableWindow(fixBG, FALSE);
+                SetFocus(GetDlgItem(hwndGui, IDC_RESUME));
+                handled = true;
+                break;
+            }
+            default:
+                break;
             }
             break;
         }
@@ -301,6 +312,8 @@ static void on_gui_open(HANDLE syncObject, void *param)
             EnableWindow(GetDlgItem(hwndGui, id), FALSE);
         SetFocus(GetDlgItem(hwndGui, IDC_RESUME));
     }
+    if (brokenBackgrounds)
+        EnableWindow(GetDlgItem(hwndGui, IDC_FIX_BACKGROUNDS), TRUE);
 
     ShowWindow(hwndGui, SW_SHOW);
     EnableWindow(hwndGame, FALSE);

@@ -1,5 +1,4 @@
 Hotkey configuration
-Steam version background fix, persistent until game closed
 Xmas Shooting - Scramble!! support
 
 Very unlikely:

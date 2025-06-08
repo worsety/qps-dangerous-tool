@@ -279,6 +279,9 @@ extern pseudo_ref<int> gameMode;
 extern explicit_ptr<QPSD::Player> qp;
 
 extern HMODULE hPracticeDLL;
+extern unsigned gameVersion;
 extern bool freezeGame;
+extern bool brokenBackgrounds;
 
 void unhook();
+bool fix_backgrounds();

@@ -2,16 +2,21 @@
 #include <detours.h>
 #include <vector>
 #include <array>
+#include <memory>
 #include "dangerous.h"
 #include "mod.h"
 #include "gui.h"
+
+typedef std::unique_ptr<void, decltype(&CloseHandle)> SmartHandle;
 
 using namespace std;
 using namespace QPSD;
 
 HMODULE hPracticeDLL;
+unsigned gameVersion; // bytes are game x.y.z
 
 pseudo_ref<HWND> hwndGame;
+static pseudo_ref<DWORD> idGameThread;
 
 explicit_ptr<Player> qp;
 static explicit_ptr<Vector<Enemy>> enemies;
@@ -835,13 +840,132 @@ namespace Hook {
     }
 }
 
+bool brokenBackgrounds;
+
+static bool patchCode(void *dst, const void *src, size_t size)
+{
+    DWORD permOrig, permDiscard;
+    if (!VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &permOrig))
+        return false;
+    CopyMemory(dst, src, size);
+    FlushInstructionCache(GetCurrentProcess(), dst, size);
+    VirtualProtect(dst, size, permOrig, &permDiscard);
+    return true;
+}
+
+const struct {
+    const wchar_t *ja, *en;
+} backgroundPaths[] = {
+    { L".\\model\\3D\\街灯明かり.bmp", L".\\model\\3D\\streetlamplight.bmp" },
+    { L".\\model\\3D\\夜空.bmp", L".\\model\\3D\\unused_nightsky.bmp" },
+    { L".\\model\\3D\\風.bmp", L".\\model\\3D\\unused_wind.bmp" },
+};
+
+// jmp 0x499cb0
+// lea esp, [esp+0] ;nop
+// lea ecx, [ecx+0] ;nop
+const unsigned char bg3_init_codeOrig[] = {
+    0xeb, 0x0a, 0x8d, 0xa4, 0x24, 0x00, 0x00, 0x00, 0x00, 0x8d, 0x49, 0x00
+};
+// ; Initialize uninitialized memory with 100f countdown for lamps lighting
+// ; at night. Zero means currently lit.  Any non-zero value fixes the initial
+// ; lamps, but new lamps get assigned a random time from 100f to 500f.
+// mov dword ptr [esp+34h], 100
+// jmp 0x499cb0
+// nop2
+const unsigned char bg3_init_codePatch[] = {
+    0xc7, 0x44, 0x24, 0x34, 0x64, 0x00, 0x00, 0x00, 0xeb, 0x02, 0x66, 0x90
+};
+
+bool fix_backgrounds()
+{
+    if (!brokenBackgrounds)
+        return false;
+
+    // We'll be suspending this thread, call from the GUI thread
+    if (GetCurrentThreadId() == idGameThread)
+        return false;
+
+    pseudo_ref<wchar_t*> bgPathRefs[3];
+    explicit_ptr<void> bg3_init_patchPoint;
+
+    switch (gameVersion) {
+    case 0x04'01'04'01:
+        REF_EXE(0x49'9c22, bgPathRefs[0]);
+        REF_EXE(0x49'ef00, bgPathRefs[1]);
+        REF_EXE(0x49'ef11, bgPathRefs[2]);
+        PTR_EXE(0x49'9ca4, bg3_init_patchPoint);
+        break;
+    default:
+        return false;
+    }
+
+    SmartHandle gameThread(OpenThread(THREAD_SUSPEND_RESUME, FALSE, idGameThread), CloseHandle);
+    SuspendThread(gameThread.get());
+
+    wchar_t *newString = nullptr;
+    int cBrokenBG = 3;
+    for (int i = 0; i < 3; i++) {
+        auto &bg = backgroundPaths[i];
+        for (auto path : {bg.ja, bg.en}) {
+            int hGraph = LoadGraph(path, 0);
+            if (-1 == hGraph)
+                continue;
+            SubHandle(hGraph);
+            cBrokenBG--;
+            if (!lstrcmp(path, bgPathRefs[i]))
+                break;
+            if (!newString)
+                newString = reinterpret_cast<wchar_t*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 256));
+            if (!newString) {
+                ResumeThread(gameThread.get());
+                return false;
+            }
+            if (lstrcpy(newString, path)) {
+                if (!patchCode(
+                    reinterpret_cast<void*>(&bgPathRefs[i]),
+                    reinterpret_cast<const void*>(&newString),
+                    sizeof(wchar_t*)
+                )) {
+                    cBrokenBG++;
+                    continue;
+                }
+                newString += lstrlen(newString) + 1;
+            }
+            break;
+        }
+    }
+
+    bool lampsBroken = true;
+    if (!memcmp(bg3_init_patchPoint, bg3_init_codePatch, sizeof(bg3_init_codePatch)))
+        lampsBroken = false;
+    else if (!memcmp(bg3_init_patchPoint, bg3_init_codeOrig, sizeof(bg3_init_codeOrig))) {
+        if (patchCode(
+            bg3_init_patchPoint,
+            reinterpret_cast<const void*>(bg3_init_codePatch),
+            sizeof(bg3_init_codePatch)
+        ))
+            lampsBroken = false;
+    }
+
+    ResumeThread(gameThread.get());
+
+    brokenBackgrounds = false; // don't try again even there was a problem
+    return !cBrokenBG && !lampsBroken;
+}
+
 bool freezeGame;
 
 static bool hooked;
 
+const DWORD detoursThreadAccess = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT;
+
 bool hook()
 {
+    SmartHandle gameThread(OpenThread(detoursThreadAccess, FALSE, idGameThread), CloseHandle);
     DetourTransactionBegin();
+    if (gameThread)
+        DetourUpdateThread(gameThread.get());
     DetourAttach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
     DetourAttach(&(PVOID&)Orig::menu_tick.ptr, Hook::menu_tick);
     DetourAttach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
@@ -857,7 +981,10 @@ void unhook()
     if (!hooked)
         return;
     return_to_main_menu();
+    SmartHandle gameThread(OpenThread(detoursThreadAccess, FALSE, idGameThread), CloseHandle);
     DetourTransactionBegin();
+    if (gameThread)
+        DetourUpdateThread(gameThread.get());
     DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
     DetourDetach(&(PVOID&)Orig::menu_tick.ptr, Hook::menu_tick);
     DetourDetach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
@@ -871,7 +998,7 @@ void unhook()
     hooked = false;
 }
 
-static HANDLE runOnceMutex;
+static SmartHandle runOnceMutex(nullptr, CloseHandle);
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -884,13 +1011,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         // Keeping to kernel32 although by the time this is injected it should be fine not to
         for (wchar_t *p = mutexName + lstrlen(mutexName); procId; procId >>= 4)
             *p++ = L'A' + (procId & 15);
-        runOnceMutex = CreateMutex(nullptr, TRUE, mutexName);
+        runOnceMutex.reset(CreateMutex(nullptr, TRUE, mutexName));
         if (!runOnceMutex)
             return FALSE;
-        if (ERROR_ALREADY_EXISTS == GetLastError()) {
-            CloseHandle(runOnceMutex);
+        if (ERROR_ALREADY_EXISTS == GetLastError())
             return FALSE;
-        }
 
         explicit_ptr<IMAGE_DOS_HEADER> dos;
         explicit_ptr<IMAGE_NT_HEADERS32> nt;
@@ -908,7 +1033,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             // TODO: maybe 1.3 support some day
             return FALSE;
         case 1428050881: // 1.4.1
+            gameVersion = 0x04'01'04'01;
+            brokenBackgrounds = true;
+
             PTR_EXE(0x84'88a4, hwndGame);
+            REF_EXE(0x84'88cc, idGameThread);
 
             PTR_EXE(0xb3'2e90, qp);
             PTR_EXE(0xb3'5974, bullets);
@@ -1004,8 +1133,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     }
     case DLL_PROCESS_DETACH:
         unhook();
-        if (runOnceMutex)
-            CloseHandle(runOnceMutex);
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
