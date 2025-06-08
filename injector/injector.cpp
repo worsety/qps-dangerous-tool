@@ -16,7 +16,17 @@ const wchar_t help_msg[] =
 
 struct Process {
     HANDLE handle{};
-    char *base;
+    char *base{};
+
+    ~Process() { if (handle) CloseHandle(handle); }
+    Process& operator=(const Process &other)
+    {
+        DuplicateHandle(GetCurrentProcess(), other.handle, GetCurrentProcess(),
+            &handle, 0, FALSE, DUPLICATE_SAME_ACCESS);
+        base = other.base;
+        return *this;
+    }
+
     bool read(const void *address, void *buffer, SIZE_T size);
     bool write(void *address, const void *data, SIZE_T size);
 };
@@ -101,6 +111,11 @@ bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Pr
     }
     WaitForSingleObject(loadlib_thread, INFINITE);
     VirtualFreeEx(process.handle, buffer, 0, MEM_RELEASE);
+    DWORD exitCode;
+    if (!GetExitCodeThread(loadlib_thread, &exitCode) || !exitCode) {
+        MessageBox(nullptr, L"Failed to load DLL", L"Error", MB_OK | MB_ICONERROR);
+        return false;
+    }
     return true;
 }
 
