@@ -1,7 +1,8 @@
 #pragma once
-#include <windows.h>
-
-extern HMODULE hPracticeDLL;
+#define _X86_
+#include <heapapi.h>
+#include <array>
+#include "mod.h"
 
 namespace QPSD {
     // Uses libstdc++ maybe?
@@ -43,40 +44,93 @@ namespace QPSD {
             finish = start;
         }
     };
+    struct Pos {
+        float x, y;
+    };
     union Enemy {
         struct {
             int id;
-            char pad04[-0x04+0x28];
-            float x, y;
-            int hp; // 0x30
-            char pad34[-0x34+0x78];
-            int parent;
+            char _pad04[-0x04+0x28];
+            Pos scrPos; // 0x28
+            int nHP; // 0x30
+            char _pad34[-0x34+0x78];
+            int idParent; // 0x78
         };
         char _raw[0xa4];
     };
-    union Player {
-        struct {
-            char _pad000[8];
-            int lives; // 0x008
-            char _pad00c[-0x00c+0x204];
-            int state;
-            char _pad208[-0x208+0x238];
-            int chain; // 0x238
-            int max_chain; // 0x23c
-            int chain_timer; // 0x240
-            char _pad244[-0x244+0x26c];
-            int shottype; // 0x26c
-            char _pad270[-0x270+0x40c];
-            float hyper_charge; // 0x40c, 240 = 100%
-            char in_hyper; // 0x410
-        };
-        char _raw[0x42c];
+    struct Player {
+        int iPlayer; // 0x000
+        int tfLifetime; // 0x004
+        int lives; // 0x008
+        int unk00c; // 0x00c
+        Pos scrPos; // 0x010
+        Pos scrPrev; // 0x018
+        // New positions are added at the head when you move unfocused,
+        // while focused movement adjusts all positions.
+        // I have no idea what this is for.
+        Pos scrWeirdPosRingBuffer[60]; // 0x020
+        int iWeirdPosRingBufferHead; // 0x200
+        int state; // 0x204
+        int formationSwitchMode; // 0x208
+        int style; // 0x20c
+        char fAutoSlowMovement; // 0x210
+        float mulHitboxIndicatorSize; // 0x214
+        // 24 auto slows with setting, set directly to 24 with focus
+        int tfShootHeldOrFocus; // 0x218
+        int tfContinueShooting; // 0x21c
+        char fMoving; // 0x220
+        float lerpHyperReadyAnim; // 0x224
+        float lerpHyperAnim; // 0x228
+        int tfIFrames; // 0x22c
+        int stageScore; // 0x230
+        int tempScore; // 0x234
+        int chain; // 0x238
+        int stageMaxChain; // 0x23c
+        int tfChainTimer; // 0x240
+        int unk244; // 0x244
+        int pxPointsBoxSizeAdd; // 0x248
+        int stageStarsBig; // 0x24c
+        int stageStarsSmall; // 0x250
+        int stageStarsGreen; // 0x254
+        int stageBonusAcc; // 0x258
+        // The 4th is Final
+        int formations[4]; // 0x25c
+        int formation; // 0x26c
+        int iFormationActive; // 0x270
+        int rbitProgress; // 0x274
+        int cRbits; // 0x278
+        Pos scrRbitAnchor; // 0x27c
+        float radRbitAngle; // 0x284
+        float pxRbitRadius; // 0x288
+        struct Rbit {
+            enum : int {
+                RBIT_READY = 1,
+                RBIT_MOVING = 2,
+                RBIT_CAUGHT = 3,
+            } state; // 0x00
+            int unk04; // 0x04
+            char fExists; // 0x08
+            Pos scrPos; // 0x0c
+            float radAim; // 0x14
+            // unused? Initialized to same value as radAim
+            float radUnk18; // 0x18
+            int idEnemyCaughtBy; // 0x1c
+        } rbits[12]; // 0x28c
+        float degHyperCharge; // 0x40c, 240 = 100%
+        char fHyper; // 0x410
+        int pxHyperConversionRadius; // 0x414
+        int extends; // 0x418
+        int stageNonHyperFinishes; // 0x41c
+        int stageHypers; // 0x420
+        int stageMisses; // 0x424
+        int stageHyperBreaks; // 0x428
         Player& operator=(const Player &src)
         {
             memcpy(this, &src, sizeof *this);
             return *this;
         }
     };
+    static_assert(0x42c == sizeof(Player));
     // Some of these probably aren't strictly what I say here
     union Bullet {
         struct {
@@ -215,7 +269,11 @@ namespace QPSD {
         int dw08;
         int state;
         int dw10;
-        char pad14[0x10];
+        char _pad14[0x10];
         int texHandle[2];
     };
 };
+
+extern HMODULE hPracticeDLL;
+
+void unhook();

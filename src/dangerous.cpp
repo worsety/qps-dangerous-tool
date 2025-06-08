@@ -600,14 +600,14 @@ static void reset_most_state()
 
 static void cycle_hyper_charge()
 {
-    if (qp->in_hyper || qp->shottype == 49)
+    if (qp->fHyper || qp->formation == 49)
         return;
-    if (qp->hyper_charge >= 360.f)
-        qp->hyper_charge = 0.f;
-    else if (qp->hyper_charge >= 240.f)
-        qp->hyper_charge = 360.f;
+    if (qp->degHyperCharge >= 360.f)
+        qp->degHyperCharge = 0.f;
+    else if (qp->degHyperCharge >= 240.f)
+        qp->degHyperCharge = 360.f;
     else
-        qp->hyper_charge = 240.f;
+        qp->degHyperCharge = 240.f;
 }
 
 static int seek_recency;
@@ -626,9 +626,9 @@ struct Checkpoint {
         chain_timer_active = !stop_timer;
         reset_most_state();
         if (phase == 1) {
-            qp->hyper_charge = 0.f;
+            qp->degHyperCharge = 0.f;
             qp->chain = 0;
-            qp->chain_timer = 0;
+            qp->tfChainTimer = 0;
         }
         fix_aesthetics();
         seek_recency = 60;
@@ -747,7 +747,7 @@ namespace Hook {
             else
                 for (Enemy *enemy = enemies->start; enemy != enemies->finish; enemy++)
                     if (11 == enemy->id)
-                        enemy->hp = 0;
+                        enemy->nHP = 0;
         }
         if (key_struck(VK_F2))
             cycle_hyper_charge();
@@ -774,25 +774,30 @@ namespace Hook {
         Orig::game_tick();
         draw_overlay();
     }
+
     static char __fastcall leaderboard_upload(void *obj, int edx, int leaderboard_idx, int score)
     {
         return 0;
     }
+
     static void __fastcall rankings_insert(int difficulty, int edx, void *score)
     {
     }
+
     static void game_sys_save()
     {
         if (trophy_flags_recorded)
             memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
         Orig::game_sys_save();
     }
+
     static char game_sys_save2()
     {
         if (trophy_flags_recorded)
             memcpy(trophy_flags, trophy_flags_snapshot, sizeof trophy_flags_snapshot);
         return Orig::game_sys_save2();
     }
+
     static char __fastcall grant_achievement(void *obj, int edx, int idx)
     {
         return 0;
@@ -817,6 +822,7 @@ void unhook()
 {
     if (!hooked)
         return;
+    return_to_main_menu();
     DetourTransactionBegin();
     DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
     DetourDetach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
