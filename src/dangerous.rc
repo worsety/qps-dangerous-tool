@@ -1,33 +1,70 @@
-#include <winver.h>
+#include "resource.h"
+#include "windows.h"
+
+IDD_POKE_GAME DIALOGEX 0, 0, 202, 93
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_NOPARENTNOTIFY
+CAPTION "Practice tool"
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    CTEXT           "&Charge",IDC_STATIC,7,7,24,8
+    CONTROL         "",IDC_CHARGE,"msctls_trackbar32",TBS_VERT | TBS_TOOLTIPS | WS_TABSTOP,10,16,19,52
+    CTEXT           "Chai&n",IDC_STATIC,36,7,24,8
+    CONTROL         "",IDC_CHAIN,"msctls_trackbar32",TBS_VERT | TBS_TOOLTIPS | WS_TABSTOP,39,16,19,52
+    CTEXT           "&Lives",IDC_STATIC,65,7,24,8
+    CONTROL         "",IDC_LIVES,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_TOOLTIPS | WS_TABSTOP,68,16,19,52
+    CTEXT           "&Rbits",IDC_STATIC,94,7,24,8
+    CONTROL         "",IDC_RBITS,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_TOOLTIPS | WS_TABSTOP,97,16,19,52
+    GROUPBOX        "&Formations",IDC_STATIC,123,7,72,60,WS_GROUP
+    COMBOBOX        IDC_FORMATION1,127,19,64,150,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_FORMATION2,127,35,64,150,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_FORMATION3,127,51,64,150,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Remo&ve tool",IDC_REMOVE_TOOL,7,72,52,14
+    PUSHBUTTON      "&Zero score",IDC_ZERO_SCORE,75,72,52,14
+    DEFPUSHBUTTON   "Re&sume",IDC_RESUME,143,72,52,14
+END
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_POKE_GAME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 195
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 86
+    END
+END
+#endif    // APSTUDIO_INVOKED
 
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION 1, 3, 0, 0
-    PRODUCTVERSION 1, 3, 0, 0
-    FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+ FILEVERSION 1,3,0,0
+ PRODUCTVERSION 1,3,0,0
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
-    FILEFLAGS VS_FF_DEBUG
+ FILEFLAGS VS_FF_DEBUG
 #else
-    FILEFLAGS 0
+ FILEFLAGS 0
 #endif
-    FILEOS VOS_NT_WINDOWS32
-    FILETYPE VFT_DLL
-    FILESUBTYPE VFT2_UNKNOWN
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "StringFileInfo"
+        BLOCK "080904b0"
         BEGIN
-            BLOCK "080904b0"
-            BEGIN
-                VALUE "CompanyName", "Worse Software"
-                VALUE "FileDescription", "QP Shooting - Dangerous!! Tool - QP Shooting - Dangerous!! Support DLL"
-                VALUE "FileVersion", "1.3.0.0"
-                VALUE "InternalName", "launcher.exe"
-                VALUE "OriginalFilename", "launcher.exe"
-                VALUE "ProductName", "QP Shooting - Dangerous!! Tool"
-                VALUE "ProductVersion", "1.3.0.0"
-            END
-        END
-        BLOCK "VarFileInfo"
-        BEGIN
-            VALUE "Translation", 0x809, 1200
+            VALUE "CompanyName", "Worse Software"
+            VALUE "FileDescription", "QP Shooting - Dangerous!! Tool - QP Shooting - Dangerous!! Support DLL"
+            VALUE "FileVersion", "1.3.0.0"
+            VALUE "InternalName", "launcher.exe"
+            VALUE "OriginalFilename", "launcher.exe"
+            VALUE "ProductName", "QP Shooting - Dangerous!! Tool"
+            VALUE "ProductVersion", "1.3.0.0"
         END
     END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END

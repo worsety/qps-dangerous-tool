@@ -12,7 +12,8 @@ const wchar_t help_msg[] =
     L"F5 - save state 1\n"
     L"F6 - load state 1\n"
     L"F7 - save state 2\n"
-    L"F8 - load state 2\n";
+    L"F8 - load state 2\n"
+    L"F9 - open GUI";
 
 struct Process {
     HANDLE handle{};

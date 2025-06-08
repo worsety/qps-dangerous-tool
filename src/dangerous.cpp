@@ -4,13 +4,16 @@
 #include <array>
 #include "dangerous.h"
 #include "mod.h"
+#include "gui.h"
 
 using namespace std;
 using namespace QPSD;
 
 HMODULE hPracticeDLL;
 
-static explicit_ptr<Player> qp;
+pseudo_ref<HWND> hwndGame;
+
+explicit_ptr<Player> qp;
 static explicit_ptr<Vector<Enemy>> enemies;
 static explicit_ptr<List<Bullet>> bullets;
 static explicit_ptr<List<TempHitbox>> temphitboxes;
@@ -66,6 +69,7 @@ static explicit_ptr<void (*)()> cutscene_delete;
 
 static pseudo_ref<char> pausemenu_isopen;
 
+pseudo_ref<int> gameMode;
 static pseudo_ref<char> screen_fade_active;
 static pseudo_ref<int> screen_fade_type;
 static pseudo_ref<float> screen_fade_rate;
@@ -76,14 +80,16 @@ static pseudo_ref<char[35][4]> trophy_flags;
 static char trophy_flags_snapshot[35][4];
 static bool trophy_flags_recorded;
 
+static explicit_ptr<void ()> game_draw;
+static explicit_ptr<void ()> menu_draw;
 static explicit_ptr<void ()> apply_bgm_volume;
 static explicit_ptr<void ()> conversation_reset;
 
+static explicit_ptr<int (const wchar_t *FileName, int NotUse3DFlag)> LoadGraph;
+static explicit_ptr<int (int Handle)> SubHandle;
 static explicit_ptr<int (int x1, int y1, int x2, int y2)> SetDrawArea;
 static explicit_ptr<int ()> SetDrawAreaFull;
-static explicit_ptr<int (const wchar_t *FileName, int NotUse3DFlag)> LoadGraph;
 static explicit_ptr<int (int x1, int y1, int x2, int y2, int Color, int Thickness)> DrawLine;
-static explicit_ptr<int (int Handle)> SubHandle;
 
 // For testing and the future
 static void draw_overlay()
@@ -700,6 +706,8 @@ static void seek_forward()
 
 static void return_to_main_menu()
 {
+    if (4 != gameMode)
+        return;
     stage_end = 5;
     screen_fade_active = 1;
     screen_fade_type = 1;
@@ -719,26 +727,10 @@ static bool key_struck(int vk)
         && !(keys[!keys_idx][vk] & 0x80);
 }
 
-// thiscall requires a member function but fastcall is compatible
-namespace Orig {
-    static explicit_ptr<void __cdecl ()> game_tick;
-    static explicit_ptr<char __fastcall (void*, int, int, int)> leaderboard_upload;
-    static explicit_ptr<void __fastcall (int, int, void*)> rankings_insert;
-    static explicit_ptr<void __cdecl ()> game_sys_save;
-    static explicit_ptr<char __cdecl ()> game_sys_save2; // does something else first
-    static explicit_ptr<char __fastcall (void*, int, int)> grant_achievement;
-}
-
-namespace Hook {
-    static void game_tick()
-    {
-        if (!trophy_flags_recorded) {
-            memcpy(trophy_flags_snapshot, trophy_flags, sizeof trophy_flags_snapshot);
-            trophy_flags_recorded = true;
-        }
-        if (seek_recency > 0)
-            --seek_recency;
-        GetKeyboardState(keys[keys_idx]);
+static void process_hotkeys(bool in_game)
+{
+    GetKeyboardState(keys[keys_idx]);
+    if (in_game) {
         if (key_struck(VK_F1)) {
             if (in_cutscene)
                 cutscenes_delete();
@@ -763,8 +755,37 @@ namespace Hook {
             savestate[1].save_state();
         if (key_struck(VK_F8))
             savestate[1].load_state();
-        keys_idx = !keys_idx;
+    }
+    if (key_struck(VK_F9))
+        gui_open();
+    keys_idx = !keys_idx;
+}
 
+// thiscall requires a member function but fastcall is compatible
+namespace Orig {
+    static explicit_ptr<void __cdecl ()> game_tick;
+    static explicit_ptr<void __cdecl ()> menu_tick;
+    static explicit_ptr<char __fastcall (void*, int, int, int)> leaderboard_upload;
+    static explicit_ptr<void __fastcall (int, int, void*)> rankings_insert;
+    static explicit_ptr<void __cdecl ()> game_sys_save;
+    static explicit_ptr<char __cdecl ()> game_sys_save2; // does something else first
+    static explicit_ptr<char __fastcall (void*, int, int)> grant_achievement;
+}
+
+namespace Hook {
+    static void game_tick()
+    {
+        if (freezeGame) {
+            game_draw();
+            return;
+        }
+        if (!trophy_flags_recorded) {
+            memcpy(trophy_flags_snapshot, trophy_flags, sizeof trophy_flags_snapshot);
+            trophy_flags_recorded = true;
+        }
+        if (seek_recency > 0)
+            --seek_recency;
+        process_hotkeys(true);
         // Fade music back in if we revert music during a fade out
         if (bgm_handle && bgm_next_track == bgm_track && bgm_volume < 128) {
             bgm_volume++;
@@ -773,6 +794,16 @@ namespace Hook {
 
         Orig::game_tick();
         draw_overlay();
+    }
+
+    static void menu_tick()
+    {
+        if (freezeGame) {
+            menu_draw();
+            return;
+        }
+        process_hotkeys(false);
+        Orig::menu_tick();
     }
 
     static char __fastcall leaderboard_upload(void *obj, int edx, int leaderboard_idx, int score)
@@ -804,12 +835,15 @@ namespace Hook {
     }
 }
 
+bool freezeGame;
+
 static bool hooked;
 
 bool hook()
 {
     DetourTransactionBegin();
     DetourAttach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
+    DetourAttach(&(PVOID&)Orig::menu_tick.ptr, Hook::menu_tick);
     DetourAttach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
     DetourAttach(&(PVOID&)Orig::rankings_insert.ptr, Hook::rankings_insert);
     DetourAttach(&(PVOID&)Orig::game_sys_save.ptr, Hook::game_sys_save);
@@ -825,6 +859,7 @@ void unhook()
     return_to_main_menu();
     DetourTransactionBegin();
     DetourDetach(&(PVOID&)Orig::game_tick.ptr, Hook::game_tick);
+    DetourDetach(&(PVOID&)Orig::menu_tick.ptr, Hook::menu_tick);
     DetourDetach(&(PVOID&)Orig::leaderboard_upload.ptr, Hook::leaderboard_upload);
     DetourDetach(&(PVOID&)Orig::rankings_insert.ptr, Hook::rankings_insert);
     DetourDetach(&(PVOID&)Orig::game_sys_save.ptr, Hook::game_sys_save);
@@ -857,6 +892,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             // TODO: maybe 1.3 support some day
             return FALSE;
         case 1428050881: // 1.4.1
+            PTR_EXE(0x84'88a4, hwndGame);
+
             PTR_EXE(0xb3'2e90, qp);
             PTR_EXE(0xb3'5974, bullets);
             PTR_EXE(0xb3'598c, temphitboxes);
@@ -910,6 +947,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
             REF_EXE(0xb3'4910, pausemenu_isopen);
 
+            REF_EXE(0xb1'42dc, gameMode);
             REF_EXE(0xb1'3f38, screen_fade_active);
             REF_EXE(0xb1'3f3c, screen_fade_type);
             REF_EXE(0xb1'3f40, screen_fade_rate);
@@ -918,6 +956,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
             REF_EXE(0xb3'2c2e, trophy_flags);
 
+            PTR_EXE(0x41'3c10, game_draw);
+            PTR_EXE(0x4a'33e0, menu_draw);
             PTR_EXE(0x4a'2c20, apply_bgm_volume);
             PTR_EXE(0x40'aff0, conversation_reset);
 
@@ -928,6 +968,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
             PTR_EXE(0x4f'5840, SubHandle);
 
             PTR_EXE(0x41'5c60, Orig::game_tick);
+            PTR_EXE(0x4a'4dd0, Orig::menu_tick);
             PTR_EXE(0x40'2ab0, Orig::leaderboard_upload);
             PTR_EXE(0x41'06d0, Orig::rankings_insert);
             PTR_EXE(0x41'2ac0, Orig::game_sys_save);
@@ -942,6 +983,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
         if (!hook())
             return FALSE;
+        gui_run();
         break;
     }
     case DLL_PROCESS_DETACH:

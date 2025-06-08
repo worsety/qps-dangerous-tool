@@ -274,6 +274,11 @@ namespace QPSD {
     };
 };
 
+extern pseudo_ref<HWND> hwndGame;
+extern pseudo_ref<int> gameMode;
+extern explicit_ptr<QPSD::Player> qp;
+
 extern HMODULE hPracticeDLL;
+extern bool freezeGame;
 
 void unhook();
