@@ -1,4 +1,3 @@
-Prevent accidentally loading two versions of the DLL with a mutex
 Hotkey configuration
 Steam version background fix, persistent until game closed
 Xmas Shooting - Scramble!! support

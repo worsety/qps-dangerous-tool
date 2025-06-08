@@ -871,11 +871,27 @@ void unhook()
     hooked = false;
 }
 
+static HANDLE runOnceMutex;
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     switch (dwReason) {
     case DLL_PROCESS_ATTACH:
     {
+        // Prevent accidentally loading two versions of the DLL
+        wchar_t mutexName[32] = L"ShootingPractice_";
+        DWORD procId = GetProcessId(GetCurrentProcess());
+        // Keeping to kernel32 although by the time this is injected it should be fine not to
+        for (wchar_t *p = mutexName + lstrlen(mutexName); procId; procId >>= 4)
+            *p++ = L'A' + (procId & 15);
+        runOnceMutex = CreateMutex(nullptr, TRUE, mutexName);
+        if (!runOnceMutex)
+            return FALSE;
+        if (ERROR_ALREADY_EXISTS == GetLastError()) {
+            CloseHandle(runOnceMutex);
+            return FALSE;
+        }
+
         explicit_ptr<IMAGE_DOS_HEADER> dos;
         explicit_ptr<IMAGE_NT_HEADERS32> nt;
 
@@ -988,6 +1004,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
     }
     case DLL_PROCESS_DETACH:
         unhook();
+        if (runOnceMutex)
+            CloseHandle(runOnceMutex);
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:

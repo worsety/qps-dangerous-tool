@@ -48,6 +48,20 @@ bool Process::write(void *address, const void *data, SIZE_T size)
     return written_bytes == size;
 }
 
+bool is_already_running(const Process &process)
+{
+    wchar_t mutexName[32] = L"ShootingPractice_";
+    DWORD procId = GetProcessId(process.handle);
+    for (wchar_t *p = mutexName + lstrlen(mutexName); procId; procId >>= 4)
+        *p++ = L'A' + (procId & 15);
+    HANDLE runOnceMutex = OpenMutex(SYNCHRONIZE, FALSE, mutexName);
+    if (runOnceMutex) {
+        CloseHandle(runOnceMutex);
+        return true;
+    }
+    return false;
+}
+
 Process findProcess(const wchar_t *needle, DWORD desiredAccess)
 {
     static DWORD pids[16384];
@@ -91,6 +105,8 @@ bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Pr
             return false;
         CloseHandle(process.handle);
     }
+    if (is_already_running(process))
+        return true;
     if (!check(process)) {
         MessageBox(nullptr, L"Unsupported game version.", L"Error", MB_OK | MB_ICONERROR);
         return false;

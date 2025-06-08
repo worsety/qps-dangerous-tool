@@ -340,6 +340,11 @@ static void gui_create()
     }
 }
 
+static void gui_free()
+{
+    DestroyWindow(hwndGui);
+}
+
 static DWORD WINAPI gui_main(LPVOID pvParam)
 {
     evGuiOpen = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -362,6 +367,7 @@ static DWORD WINAPI gui_main(LPVOID pvParam)
         EnableWindow(hwndGame, TRUE);
         return ret;
     }
+    gui_free();
     FreeLibraryAndExitThread(hPracticeDLL, ret);
 }
 
