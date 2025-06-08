@@ -96,6 +96,7 @@
     <ClInclude Include="mod.h" />
     <ClInclude Include="msgpump.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dangerous.rc" />

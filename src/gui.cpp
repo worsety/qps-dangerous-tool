@@ -7,11 +7,13 @@
 #include "dangerous.h"
 #include "resource.h"
 #include "msgpump.h"
+#include "util.h"
 
 // ...
 #undef small
 
-static HANDLE evGuiOpen;
+static SmartHandle evGuiOpen(nullptr, CloseHandle);
+static SmartHandle evGuiQuit(nullptr, CloseHandle);
 static HWND hwndGui;
 
 const int idInGameControls[] = {
@@ -358,9 +360,15 @@ static void gui_free()
     DestroyWindow(hwndGui);
 }
 
+static void on_gui_quit(HANDLE syncObject, void *param)
+{
+    PostQuitMessage(0);
+}
+
 static DWORD WINAPI gui_main(LPVOID pvParam)
 {
-    evGuiOpen = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    evGuiOpen.reset(CreateEvent(nullptr, FALSE, FALSE, nullptr));
+    evGuiQuit.reset(CreateEvent(nullptr, FALSE, FALSE, nullptr));
 
     SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
 
@@ -372,7 +380,8 @@ static DWORD WINAPI gui_main(LPVOID pvParam)
     gui_create();
 
     MessagePump msgPump;
-    msgPump.add_syncObject(evGuiOpen, on_gui_open);
+    msgPump.add_syncObject(evGuiOpen.get(), on_gui_open);
+    msgPump.add_syncObject(evGuiQuit.get(), on_gui_quit);
     msgPump.add_modelessDialogBox(hwndGui);
     int ret = msgPump.run();
 
@@ -386,8 +395,16 @@ static DWORD WINAPI gui_main(LPVOID pvParam)
 
 void gui_open()
 {
+    if (!evGuiOpen)
+        return;
     freezeGame = true;
-    SetEvent(evGuiOpen);
+    SetEvent(evGuiOpen.get());
+}
+
+void gui_quit()
+{
+    if (evGuiQuit)
+        SetEvent(evGuiQuit.get());
 }
 
 void gui_run()

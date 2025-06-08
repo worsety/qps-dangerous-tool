@@ -6,8 +6,7 @@
 #include "dangerous.h"
 #include "mod.h"
 #include "gui.h"
-
-typedef std::unique_ptr<void, decltype(&CloseHandle)> SmartHandle;
+#include "util.h"
 
 using namespace std;
 using namespace QPSD;
@@ -1132,9 +1131,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
         break;
     }
     case DLL_PROCESS_DETACH:
-        unhook();
+        gui_quit();
         break;
     case DLL_THREAD_ATTACH:
+        break;
     case DLL_THREAD_DETACH:
         break;
     }
