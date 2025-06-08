@@ -409,5 +409,7 @@ void gui_quit()
 
 void gui_run()
 {
-    CreateThread(nullptr, 0, gui_main, nullptr, 0, nullptr);
+    HANDLE hThread = CreateThread(nullptr, 0, gui_main, nullptr, 0, nullptr);
+    if (hThread)
+        CloseHandle(hThread);
 }

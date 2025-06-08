@@ -1,4 +1,3 @@
-Find the one remaining leaked handle
 Hotkey configuration
 Xmas Shooting - Scramble!! support
 
