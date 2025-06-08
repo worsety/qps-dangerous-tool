@@ -1,6 +1,11 @@
 #include <windows.h>
 #include <psapi.h>
 #include <cwchar>
+#include "const_obfuscate.h"
+
+OBF_IMPORT_DECL(ReadProcessMemory);
+OBF_IMPORT_DECL(WriteProcessMemory);
+OBF_IMPORT_DECL(CreateRemoteThread);
 
 using namespace std;
 
@@ -35,7 +40,7 @@ struct Process {
 bool Process::read(const void *address, void *buffer, SIZE_T size)
 {
     SIZE_T read_bytes;
-    if (!ReadProcessMemory(handle, address, buffer, size, &read_bytes))
+    if (!OBF_FUNC(ReadProcessMemory)(handle, address, buffer, size, &read_bytes))
         return false;
     return read_bytes == size;
 }
@@ -43,7 +48,7 @@ bool Process::read(const void *address, void *buffer, SIZE_T size)
 bool Process::write(void *address, const void *data, SIZE_T size)
 {
     SIZE_T written_bytes;
-    if (!WriteProcessMemory(handle, address, data, size, &written_bytes))
+    if (!OBF_FUNC(WriteProcessMemory)(handle, address, data, size, &written_bytes))
         return false;
     return written_bytes == size;
 }
@@ -103,7 +108,6 @@ bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Pr
             break;
         if (IDCANCEL == MessageBox(nullptr, L"Could not find/access process", L"Error", MB_RETRYCANCEL | MB_ICONERROR))
             return false;
-        CloseHandle(process.handle);
     }
     if (is_already_running(process))
         return true;
@@ -121,7 +125,8 @@ bool inject(const wchar_t *target_exe, const wchar_t *dll_path, bool (*check)(Pr
         MessageBox(nullptr, L"Failed to write to process memory.", L"Error", MB_OK | MB_ICONERROR);
         return false;
     }
-    auto loadlib_thread = CreateRemoteThread(process.handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibrary), buffer, 0, nullptr);
+    auto loadlib_thread = OBF_FUNC(CreateRemoteThread)(process.handle, nullptr, 0,
+        reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibrary), buffer, 0, nullptr);
     if (!loadlib_thread) {
         MessageBox(nullptr, L"Failed to create remote thread.", L"Error", MB_OK | MB_ICONERROR);
         return false;
@@ -160,9 +165,18 @@ bool check_dangerous(Process &process)
     }
 }
 
+static void init_obfuscated_functions()
+{
+    OBF_IMPORT(kernel32, ReadProcessMemory);
+    OBF_IMPORT(kernel32, WriteProcessMemory);
+    OBF_IMPORT(kernel32, CreateRemoteThread);
+}
+
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
     wchar_t dll_dir[MAX_PATH], dangerous_dll[MAX_PATH];
+
+    init_obfuscated_functions();
 
     SetProcessDPIAware();
     GetCurrentDirectory(MAX_PATH, dll_dir);
