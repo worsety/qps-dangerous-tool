@@ -41,5 +41,4 @@ namespace const_obfuscate {
     HMODULE hModule = LoadLibraryA(#module); \
     if (!hModule) ExitThread(1); \
     OBF_FUNC(func) = reinterpret_cast<decltype(OBF_FUNC(func))>(GetProcAddress(hModule, OBF_DATA(#func))); \
-    CloseHandle(hModule); \
 } while(0)
